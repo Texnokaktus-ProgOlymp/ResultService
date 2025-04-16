@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Texnokaktus.ProgOlymp.JudgeService.DataAccess.Context;
+using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 
-namespace Texnokaktus.ProgOlymp.JudgeService.DataAccess;
+namespace Texnokaktus.ProgOlymp.ResultService.DataAccess;
 
 public static class DiExtensions
 {

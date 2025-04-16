@@ -1,4 +1,4 @@
-namespace Texnokaktus.ProgOlymp.JudgeService.DataAccess.Entities;
+namespace Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities;
 
 public record ProblemResult(int Id, int ProblemId, int ParticipantId, decimal BaseScore)
 {

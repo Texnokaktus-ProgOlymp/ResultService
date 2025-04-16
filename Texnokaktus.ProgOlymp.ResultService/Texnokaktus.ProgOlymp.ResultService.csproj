@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Texnokaktus.ProgOlymp.JudgeService.DataAccess\Texnokaktus.ProgOlymp.JudgeService.DataAccess.csproj" />
+      <ProjectReference Include="..\Texnokaktus.ProgOlymp.ResultService.DataAccess\Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj" />
     </ItemGroup>
 
 </Project>

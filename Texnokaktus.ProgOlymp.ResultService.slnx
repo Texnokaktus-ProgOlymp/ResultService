@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="Texnokaktus.ProgOlymp.JudgeService.DataAccess/Texnokaktus.ProgOlymp.JudgeService.DataAccess.csproj" />
+  <Project Path="Texnokaktus.ProgOlymp.ResultService.DataAccess\Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj" />
   <Project Path="Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj" />
 </Solution>

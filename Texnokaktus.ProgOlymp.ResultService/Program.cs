@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Texnokaktus.ProgOlymp.JudgeService.DataAccess;
+using Texnokaktus.ProgOlymp.ResultService.DataAccess;
 using Texnokaktus.ProgOlymp.ResultService.Services;
 
 var builder = WebApplication.CreateBuilder(args);

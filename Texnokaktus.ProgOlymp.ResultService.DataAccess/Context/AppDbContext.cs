@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Texnokaktus.ProgOlymp.JudgeService.DataAccess.Entities;
+using Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities;
 
-namespace Texnokaktus.ProgOlymp.JudgeService.DataAccess.Context;
+namespace Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
