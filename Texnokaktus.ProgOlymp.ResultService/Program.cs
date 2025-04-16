@@ -16,6 +16,6 @@ builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Confi
 var app = builder.Build();
 
 app.MapGrpcReflectionService();
-app.MapGrpcService<GreeterService>();
+app.MapGrpcService<ResultServiceImpl>();
 
 await app.RunAsync();
