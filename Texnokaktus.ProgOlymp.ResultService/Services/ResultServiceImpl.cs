@@ -14,6 +14,7 @@ public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.R
         var contestStage = request.Stage.MapContestStage();
 
         var contestResult = await dbContext.ContestResults
+                                           .AsNoTracking()
                                            .Include(result => result.Problems)
                                            .FirstOrDefaultAsync(result => result.ContestId == request.ContestId
                                                                        && result.Stage == contestStage)
@@ -57,6 +58,33 @@ public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.R
         });
 
         await dbContext.SaveChangesAsync(context.CancellationToken);
+
+        return new();
+    }
+
+    public override async Task<Empty> AddProblem(AddProblemRequest request, ServerCallContext context)
+    {
+        var stage = request.Stage.MapContestStage();
+
+        var contestResult = await dbContext.ContestResults
+                                           .Include(result => result.Problems)
+                                           .FirstOrDefaultAsync(result => result.ContestId == request.ContestId
+                                                                       && result.Stage == stage)
+                         ?? throw new ContestNotFoundException(request.ContestId, stage);
+
+        if (contestResult.Published)
+            throw new ContestReadonlyException(request.ContestId, stage);
+
+        if (contestResult.Problems.Any(problem => problem.Alias == request.Alias))
+            throw new ProblemAlreadyExistsException(request.ContestId, stage, request.Alias);
+
+        contestResult.Problems.Add(new()
+        {
+            Alias = request.Alias,
+            Name = request.Name
+        });
+
+        await dbContext.SaveChangesAsync();
 
         return new();
     }
