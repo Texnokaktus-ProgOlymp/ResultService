@@ -88,6 +88,35 @@ public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.R
 
         return new();
     }
+
+    public override async Task<Empty> AddResult(AddResultRequest request, ServerCallContext context)
+    {
+        var stage = request.Stage.MapContestStage();
+
+        var contestResult = await dbContext.ContestResults
+                                           .Include(contestResult => contestResult.Problems)
+                                           .ThenInclude(problem => problem.Results)
+                                           .FirstOrDefaultAsync(contestResult => contestResult.ContestId == request.ContestId
+                                                                              && contestResult.Stage == stage)
+                         ?? throw new ContestNotFoundException(request.ContestId, stage);
+
+        if (contestResult.Published)
+            throw new ContestReadonlyException(request.ContestId, stage);
+
+        var problem = contestResult.Problems.FirstOrDefault(problem => problem.Alias == request.Alias)
+                   ?? throw new ProblemNotFoundException(request.ContestId, stage, request.Alias);
+
+        if (problem.Results.Any(result => result.ParticipantId == request.ParticipantId))
+            throw new ResultAlreadyExistsException(request.ContestId, stage, request.Alias, request.ParticipantId);
+
+        problem.Results.Add(new()
+        {
+            ParticipantId = request.ParticipantId,
+            BaseScore = request.BaseScore
+        });
+
+        return new();
+    }
 }
 
 file static class MappingExtensions
