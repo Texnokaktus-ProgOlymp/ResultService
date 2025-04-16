@@ -9,11 +9,13 @@ builder.Services.AddDataAccess(optionsBuilder => optionsBuilder.UseSqlServer(bui
                                                                .EnableSensitiveDataLogging(builder.Environment.IsDevelopment()));
 
 builder.Services.AddGrpc();
+builder.Services.AddGrpcReflection();
 
 builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
 
 var app = builder.Build();
 
+app.MapGrpcReflectionService();
 app.MapGrpcService<GreeterService>();
 
 await app.RunAsync();
