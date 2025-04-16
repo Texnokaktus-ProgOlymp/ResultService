@@ -11,7 +11,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.AspNetCore" Version="2.64.0"/>
+        <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Texnokaktus.ProgOlymp.JudgeService.DataAccess\Texnokaktus.ProgOlymp.JudgeService.DataAccess.csproj" />
     </ItemGroup>
 
 </Project>
