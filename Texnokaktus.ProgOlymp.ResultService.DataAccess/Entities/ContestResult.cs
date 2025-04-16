@@ -1,6 +1,11 @@
 namespace Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities;
 
-public record ContestResult(int Id, int ContestId, ContestStage Stage, long StageId, bool Published)
+public record ContestResult
 {
-    public ICollection<Problem> Problems { get; set; }
+    public int Id { get; init; }
+    public int ContestId { get; init; }
+    public ContestStage Stage { get; init; }
+    public long StageId { get; init; }
+    public bool Published { get; set; }
+    public ICollection<Problem> Problems { get; init; }
 }

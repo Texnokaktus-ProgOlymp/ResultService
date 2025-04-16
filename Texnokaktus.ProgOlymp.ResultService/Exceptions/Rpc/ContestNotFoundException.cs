@@ -10,7 +10,5 @@ public class ContestNotFoundException : NotFoundException
 
     public ContestNotFoundException(long contestStageId, Exception? innerException = null) : base($"The contest stage {contestStageId} was not found", innerException)
     {
-        
     }
-
 }

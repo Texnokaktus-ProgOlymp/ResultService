@@ -1,3 +1,4 @@
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
@@ -33,6 +34,31 @@ public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.R
                 })
             }
         };
+    }
+
+    public override async Task<Empty> AddContest(AddContestRequest request, ServerCallContext context)
+    {
+        var contestStage = request.Stage.MapContestStage();
+
+        if (await dbContext.ContestResults.AnyAsync(contestResult => contestResult.ContestId == request.Id
+                                                                  && contestResult.Stage == contestStage,
+                                                    context.CancellationToken))
+            throw new ContestAlreadyExistsException(request.Id, contestStage);
+
+        if (await dbContext.ContestResults.AnyAsync(result => result.StageId == request.StageId,
+                                                    context.CancellationToken))
+            throw new ContestAlreadyExistsException(request.StageId);
+
+        dbContext.ContestResults.Add(new()
+        {
+            ContestId = request.Id,
+            Stage = contestStage,
+            StageId = request.StageId
+        });
+
+        await dbContext.SaveChangesAsync(context.CancellationToken);
+
+        return new();
     }
 }
 
