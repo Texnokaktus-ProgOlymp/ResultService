@@ -89,6 +89,78 @@ public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.R
         return new();
     }
 
+    public override async Task<ContestResults> GetResults(GetResultsRequest request, ServerCallContext context)
+    {
+        var stage = request.Stage.MapContestStage();
+
+        var contestResult = await dbContext.ContestResults
+                                           .AsSplitQuery()
+                                           .Include(contestResult => contestResult.Problems)
+                                           .ThenInclude(problem => problem.Results)
+                                           .ThenInclude(result => result.Adjustments)
+                                           .Where(contestResult => contestResult.ContestId == request.ContestId
+                                                                && contestResult.Stage == stage)
+                                           .FirstOrDefaultAsync()
+                         ?? throw new ContestNotFoundException(request.ContestId, stage);
+
+        return new()
+        {
+            Problems =
+            {
+                contestResult.Problems.Select(problem => new Problem
+                {
+                    Id = problem.Id,
+                    Alias = problem.Alias,
+                    Name = problem.Name
+                })
+            },
+            Rows =
+            {
+                from problemId in contestResult.Problems.Select(problem => problem.Id)
+                from participantId in contestResult.Problems
+                                                   .SelectMany(problem => problem.Results.Select(problemResult => problemResult.ParticipantId))
+                                                   .Distinct()
+                let result = contestResult.Problems.FirstOrDefault(problem => problem.Id == problemId)
+                                         ?.Results.FirstOrDefault(result => result.ParticipantId == participantId)
+                let row = new
+                {
+                    ProblemId = problemId,
+                    ParticipantId = participantId,
+                    Result = result is not null
+                                 ? new
+                                 {
+                                     result.BaseScore,
+                                     Adjustments = result.Adjustments.Count != 0
+                                                       ? result.Adjustments.Sum(adjustment => adjustment.Adjustment)
+                                                       : (decimal?)null
+                                 }
+                                 : null
+                }
+                group row by row.ParticipantId
+                into grouping
+                select new ResultRow
+                {
+                    ParticipantId = grouping.Key,
+                    Results =
+                    {
+                        grouping.Select(arg => new ProblemResult
+                        {
+                            ProblemId = arg.ProblemId,
+                            Score = arg.Result is { } result
+                                        ? new ResultScore
+                                        {
+                                            BaseScore = result.BaseScore,
+                                            AdjustmentsSum = result.Adjustments,
+                                            TotalScore = result.BaseScore + (result.Adjustments ?? 0)
+                                        }
+                                        : null
+                        })
+                    }
+                }
+            }
+        };
+    }
+
     public override async Task<Empty> AddResult(AddResultRequest request, ServerCallContext context)
     {
         var stage = request.Stage.MapContestStage();
