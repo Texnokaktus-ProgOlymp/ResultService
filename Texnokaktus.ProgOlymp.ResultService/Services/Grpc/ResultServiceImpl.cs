@@ -153,6 +153,55 @@ public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.R
         };
     }
 
+    public override async Task<ParticipantResults> GetResultsByParticipant(GetResultsByParticipantRequest request, ServerCallContext context)
+    {
+        var stage = request.Stage.MapContestStage();
+
+        var contestResult = await dbContext.ContestResults
+                                           .AsSplitQuery()
+                                           .Include(contestResult => contestResult.Problems)
+                                           .ThenInclude(problem => problem.Results)
+                                           .ThenInclude(result => result.Adjustments)
+                                           .Where(contestResult => contestResult.ContestId == request.ContestId
+                                                                && contestResult.Stage == stage)
+                                           .FirstOrDefaultAsync()
+                         ?? throw new ContestNotFoundException(request.ContestId, stage);
+        
+        if (contestResult.Problems.SelectMany(problem => problem.Results).All(problemResult => problemResult.ParticipantId != request.ParticipantId))
+            throw new ParticipantResultsNotFound(request.ContestId, stage, request.ParticipantId);
+
+        return new()
+        {
+            Problems =
+            {
+                contestResult.Problems.Select(problem => new Problem
+                {
+                    Id = problem.Id,
+                    Alias = problem.Alias,
+                    Name = problem.Name
+                })
+            },
+            Results =
+            {
+                from problemId in contestResult.Problems.Select(problem => problem.Id)
+                let problemResult = contestResult.Problems.FirstOrDefault(problem => problem.Id == problemId)
+                                                ?.Results.FirstOrDefault(result => result.ParticipantId == request.ParticipantId)
+                select new ProblemResult
+                {
+                    ProblemId = problemId,
+                    Score = problemResult is not null
+                                ? new Domain.ResultScore(problemResult.BaseScore,
+                                                         problemResult.Adjustments
+                                                                      .Select(adjustment => new Domain.ScoreAdjustment(adjustment.Id,
+                                                                                                                       adjustment.Adjustment,
+                                                                                                                       adjustment.Comment))
+                                                                      .ToList()).MapResultScore()
+                                : null
+                }
+            }
+        };
+    }
+
     public override async Task<Empty> AddResult(AddResultRequest request, ServerCallContext context)
     {
         var stage = request.Stage.MapContestStage();
@@ -206,6 +255,18 @@ file static class MappingExtensions
         {
             BaseScore = resultScore.BaseScore,
             AdjustmentsSum = resultScore.AdjustmentsSum,
-            TotalScore = resultScore.TotalScore
+            TotalScore = resultScore.TotalScore,
+            Adjustments =
+            {
+                resultScore.Adjustments.Select(scoreAdjustment => scoreAdjustment.MapScoreAdjustment())
+            }
+        };
+
+    private static ScoreAdjustment MapScoreAdjustment(this Domain.ScoreAdjustment scoreAdjustment) =>
+        new()
+        {
+            Id = scoreAdjustment.Id,
+            Adjustment = scoreAdjustment.Adjustment,
+            Comment = scoreAdjustment.Comment
         };
 }
