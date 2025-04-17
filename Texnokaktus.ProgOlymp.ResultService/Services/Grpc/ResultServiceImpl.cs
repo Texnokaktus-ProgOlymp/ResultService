@@ -166,7 +166,7 @@ public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.R
                                                                 && contestResult.Stage == stage)
                                            .FirstOrDefaultAsync()
                          ?? throw new ContestNotFoundException(request.ContestId, stage);
-        
+
         if (contestResult.Problems.SelectMany(problem => problem.Results).All(problemResult => problemResult.ParticipantId != request.ParticipantId))
             throw new ParticipantResultsNotFound(request.ContestId, stage, request.ParticipantId);
 
