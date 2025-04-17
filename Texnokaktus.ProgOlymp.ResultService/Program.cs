@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess;
-using Texnokaktus.ProgOlymp.ResultService.Services;
+using Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
 

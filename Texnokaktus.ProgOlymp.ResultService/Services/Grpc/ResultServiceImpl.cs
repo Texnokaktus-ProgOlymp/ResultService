@@ -5,7 +5,7 @@ using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Exceptions.Rpc;
 
-namespace Texnokaktus.ProgOlymp.ResultService.Services;
+namespace Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
 public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.Results.ResultService.ResultServiceBase
 {
