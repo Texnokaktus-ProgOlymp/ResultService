@@ -120,23 +120,22 @@ public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.R
                 from participantId in contestResult.Problems
                                                    .SelectMany(problem => problem.Results.Select(problemResult => problemResult.ParticipantId))
                                                    .Distinct()
-                let result = contestResult.Problems.FirstOrDefault(problem => problem.Id == problemId)
-                                         ?.Results.FirstOrDefault(result => result.ParticipantId == participantId)
-                let row = new
+                let problemResult = contestResult.Problems.FirstOrDefault(problem => problem.Id == problemId)
+                                                ?.Results.FirstOrDefault(result => result.ParticipantId == participantId)
+                let result = new
                 {
                     ProblemId = problemId,
                     ParticipantId = participantId,
-                    Result = result is not null
-                                 ? new
-                                 {
-                                     result.BaseScore,
-                                     Adjustments = result.Adjustments.Count != 0
-                                                       ? result.Adjustments.Sum(adjustment => adjustment.Adjustment)
-                                                       : (decimal?)null
-                                 }
+                    Result = problemResult is not null
+                                 ? new Domain.ResultScore(problemResult.BaseScore,
+                                                          problemResult.Adjustments
+                                                                       .Select(adjustment => new Domain.ScoreAdjustment(adjustment.Id,
+                                                                                                                        adjustment.Adjustment,
+                                                                                                                        adjustment.Comment))
+                                                                       .ToList())
                                  : null
                 }
-                group row by row.ParticipantId
+                group result by result.ParticipantId
                 into grouping
                 select new ResultRow
                 {
@@ -146,14 +145,7 @@ public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.R
                         grouping.Select(arg => new ProblemResult
                         {
                             ProblemId = arg.ProblemId,
-                            Score = arg.Result is { } result
-                                        ? new ResultScore
-                                        {
-                                            BaseScore = result.BaseScore,
-                                            AdjustmentsSum = result.Adjustments,
-                                            TotalScore = result.BaseScore + (result.Adjustments ?? 0)
-                                        }
-                                        : null
+                            Score = arg.Result?.MapResultScore()
                         })
                     }
                 }
@@ -205,7 +197,15 @@ file static class MappingExtensions
         contestStage switch
         {
             DataAccess.Entities.ContestStage.Preliminary => ContestStage.Preliminary,
-            DataAccess.Entities.ContestStage.Final       => ContestStage.Final,
-            _                                            => throw new ArgumentOutOfRangeException(nameof(contestStage), contestStage, null)
+            DataAccess.Entities.ContestStage.Final => ContestStage.Final,
+            _ => throw new ArgumentOutOfRangeException(nameof(contestStage), contestStage, null)
+        };
+
+    public static ResultScore MapResultScore(this Domain.ResultScore resultScore) =>
+        new()
+        {
+            BaseScore = resultScore.BaseScore,
+            AdjustmentsSum = resultScore.AdjustmentsSum,
+            TotalScore = resultScore.TotalScore
         };
 }

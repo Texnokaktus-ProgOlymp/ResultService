@@ -3,5 +3,6 @@
     <Project Path="modules\Common.Contracts\Texnokaktus.ProgOlymp.Common.Contracts\Texnokaktus.ProgOlymp.Common.Contracts.csproj" Type="Classic C#" />
   </Folder>
   <Project Path="Texnokaktus.ProgOlymp.ResultService.DataAccess\Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj" />
+  <Project Path="Texnokaktus.ProgOlymp.ResultService.Domain\Texnokaktus.ProgOlymp.ResultService.Domain.csproj" Type="Classic C#" />
   <Project Path="Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj" />
 </Solution>
