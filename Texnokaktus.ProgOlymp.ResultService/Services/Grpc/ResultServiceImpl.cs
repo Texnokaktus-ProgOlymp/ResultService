@@ -129,7 +129,8 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
                                                                          ProblemId = result.ProblemId,
                                                                          Score = result.Score?.MapResultScore()
                                                                      })
-                                                       }
+                                                       },
+                                                       TotalScore = resultRow.TotalScore
                                                    })
                                    }
                                })
@@ -169,7 +170,8 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
                               ProblemId = result.ProblemId,
                               Score = result.Score?.MapResultScore()
                           })
-            }
+            },
+            TotalScore = resultRow.TotalScore
         };
     }
 
@@ -198,6 +200,8 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
             ParticipantId = request.ParticipantId,
             BaseScore = request.BaseScore
         });
+
+        await dbContext.SaveChangesAsync();
 
         return new();
     }
