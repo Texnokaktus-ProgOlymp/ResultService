@@ -4,10 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Exceptions.Rpc;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
-public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.Results.ResultService.ResultServiceBase
+public class ResultServiceImpl(AppDbContext dbContext, IResultService resultService) : Common.Contracts.Grpc.Results.ResultService.ResultServiceBase
 {
     public override async Task<Contest> GetContest(GetContestRequest request, ServerCallContext context)
     {
@@ -157,47 +158,34 @@ public class ResultServiceImpl(AppDbContext dbContext) : Common.Contracts.Grpc.R
     {
         var stage = request.Stage.MapContestStage();
 
-        var contestResult = await dbContext.ContestResults
-                                           .AsSplitQuery()
-                                           .Include(contestResult => contestResult.Problems)
-                                           .ThenInclude(problem => problem.Results)
-                                           .ThenInclude(result => result.Adjustments)
-                                           .Where(contestResult => contestResult.ContestId == request.ContestId
-                                                                && contestResult.Stage == stage)
-                                           .FirstOrDefaultAsync()
-                         ?? throw new ContestNotFoundException(request.ContestId, stage);
+        var contestResults = await resultService.GetResultsAsync(request.ContestId, stage)
+                          ?? throw new ContestNotFoundException(request.ContestId, stage);
 
-        if (contestResult.Problems.SelectMany(problem => problem.Results).All(problemResult => problemResult.ParticipantId != request.ParticipantId))
+        if (contestResults.ResultGroups
+                          .SelectMany(resultGroup => resultGroup.Rows)
+                          .FirstOrDefault(row => row.Participant.Id == request.ParticipantId) is not { } resultRow)
             throw new ParticipantResultsNotFound(request.ContestId, stage, request.ParticipantId);
 
         return new()
         {
             Problems =
             {
-                contestResult.Problems.Select(problem => new Problem
-                {
-                    Id = problem.Id,
-                    Alias = problem.Alias,
-                    Name = problem.Name
-                })
+                contestResults.Problems
+                              .Select(problem => new Problem
+                               {
+                                   Id = problem.Id,
+                                   Alias = problem.Alias,
+                                   Name = problem.Name
+                               })
             },
             Results =
             {
-                from problemId in contestResult.Problems.Select(problem => problem.Id)
-                let problemResult = contestResult.Problems.FirstOrDefault(problem => problem.Id == problemId)
-                                                ?.Results.FirstOrDefault(result => result.ParticipantId == request.ParticipantId)
-                select new ProblemResult
-                {
-                    ProblemId = problemId,
-                    Score = problemResult is not null
-                                ? new Domain.ResultScore(problemResult.BaseScore,
-                                                         problemResult.Adjustments
-                                                                      .Select(adjustment => new Domain.ScoreAdjustment(adjustment.Id,
-                                                                                                                       adjustment.Adjustment,
-                                                                                                                       adjustment.Comment))
-                                                                      .ToList()).MapResultScore()
-                                : null
-                }
+                resultRow.ProblemResults
+                         .Select(result => new ProblemResult
+                          {
+                              ProblemId = result.ProblemId,
+                              Score = result.Score?.MapResultScore()
+                          })
             }
         };
     }
