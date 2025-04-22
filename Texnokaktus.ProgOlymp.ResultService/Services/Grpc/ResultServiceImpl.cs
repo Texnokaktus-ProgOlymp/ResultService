@@ -94,62 +94,45 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
     {
         var stage = request.Stage.MapContestStage();
 
-        var contestResult = await dbContext.ContestResults
-                                           .AsSplitQuery()
-                                           .Include(contestResult => contestResult.Problems)
-                                           .ThenInclude(problem => problem.Results)
-                                           .ThenInclude(result => result.Adjustments)
-                                           .Where(contestResult => contestResult.ContestId == request.ContestId
-                                                                && contestResult.Stage == stage)
-                                           .FirstOrDefaultAsync()
-                         ?? throw new ContestNotFoundException(request.ContestId, stage);
+        var contestResults = await resultService.GetResultsAsync(request.ContestId, stage)
+                          ?? throw new ContestNotFoundException(request.ContestId, stage);
 
         return new()
         {
             Problems =
             {
-                contestResult.Problems.Select(problem => new Problem
-                {
-                    Id = problem.Id,
-                    Alias = problem.Alias,
-                    Name = problem.Name
-                })
+                contestResults.Problems
+                              .Select(problem => new Problem
+                               {
+                                   Id = problem.Id,
+                                   Alias = problem.Alias,
+                                   Name = problem.Name
+                               })
             },
-            Rows =
+            ResultGroups =
             {
-                from problemId in contestResult.Problems.Select(problem => problem.Id)
-                from participantId in contestResult.Problems
-                                                   .SelectMany(problem => problem.Results.Select(problemResult => problemResult.ParticipantId))
-                                                   .Distinct()
-                let problemResult = contestResult.Problems.FirstOrDefault(problem => problem.Id == problemId)
-                                                ?.Results.FirstOrDefault(result => result.ParticipantId == participantId)
-                let result = new
-                {
-                    ProblemId = problemId,
-                    ParticipantId = participantId,
-                    Result = problemResult is not null
-                                 ? new Domain.ResultScore(problemResult.BaseScore,
-                                                          problemResult.Adjustments
-                                                                       .Select(adjustment => new Domain.ScoreAdjustment(adjustment.Id,
-                                                                                                                        adjustment.Adjustment,
-                                                                                                                        adjustment.Comment))
-                                                                       .ToList())
-                                 : null
-                }
-                group result by result.ParticipantId
-                into grouping
-                select new ResultRow
-                {
-                    ParticipantId = grouping.Key,
-                    Results =
-                    {
-                        grouping.Select(arg => new ProblemResult
-                        {
-                            ProblemId = arg.ProblemId,
-                            Score = arg.Result?.MapResultScore()
-                        })
-                    }
-                }
+                contestResults.ResultGroups
+                              .Select(resultGroup => new ResultGroup
+                               {
+                                   Name = resultGroup.Name,
+                                   Rows =
+                                   {
+                                       resultGroup.Rows
+                                                  .Select(resultRow => new ResultRow
+                                                   {
+                                                       ParticipantId = resultRow.Participant.Id,
+                                                       Results =
+                                                       {
+                                                           resultRow.ProblemResults
+                                                                    .Select(result => new ProblemResult
+                                                                     {
+                                                                         ProblemId = result.ProblemId,
+                                                                         Score = result.Score?.MapResultScore()
+                                                                     })
+                                                       }
+                                                   })
+                                   }
+                               })
             }
         };
     }
