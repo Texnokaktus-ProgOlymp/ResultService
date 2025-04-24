@@ -17,6 +17,22 @@ public class ResultService(Logic.Services.Abstractions.IResultService resultServ
 
         return TypedResults.Ok(results);
     }
+
+    public async Task<Results<Ok<ParticipantResult>, NotFound>> GetParticipantResultsAsync(int contestId, ContestStage stage, int participantId)
+    {
+        if (await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { } contestResults
+         || contestResults.ResultGroups
+                          .SelectMany(group => group.Rows)
+                          .FirstOrDefault(row => row.Participant.Id == participantId) is not { } resultRow)
+            return TypedResults.NotFound();
+
+        var result = new ParticipantResult(contestResults.Problems.Select(problem => problem.MapProblem()),
+                                           resultRow.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
+                                                                                 problemResult => problemResult.MapProblemResult(score => score.MapExtendedScore())),
+                                           resultRow.TotalScore);
+
+        return TypedResults.Ok(result);
+    }
 }
 
 file static class MappingExtensions
@@ -37,7 +53,7 @@ file static class MappingExtensions
             resultScore.AdjustmentsSum,
             resultScore.TotalScore);
 
-    private static ExtendedScore MapExtendedScore(this Domain.ResultScore resultScore) =>
+    public static ExtendedScore MapExtendedScore(this Domain.ResultScore resultScore) =>
         new(resultScore.BaseScore,
             resultScore.Adjustments.Select(scoreAdjustment => scoreAdjustment.MapScoreAdjustment()),
             resultScore.AdjustmentsSum,
@@ -49,7 +65,7 @@ file static class MappingExtensions
     private static Participant MapParticipant(this Domain.Participant participant) =>
         new(participant.Name, participant.Grade);
 
-    private static ProblemResult<TScore> MapProblemResult<TScore>(this Domain.ProblemResult problemResult, Func<Domain.ResultScore, TScore> resultScoreMapper) where TScore : class =>
+    public static ProblemResult<TScore> MapProblemResult<TScore>(this Domain.ProblemResult problemResult, Func<Domain.ResultScore, TScore> resultScoreMapper) where TScore : class =>
         new(problemResult.Score is { } score
             ? resultScoreMapper.Invoke(score)
             : null);

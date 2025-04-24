@@ -6,4 +6,5 @@ namespace Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 public interface IResultService
 {
     Task<Results<Ok<ContestResults>, NotFound>> GetContestResultsAsync(int contestId, ContestStage stage);
+    Task<Results<Ok<ParticipantResult>, NotFound>> GetParticipantResultsAsync(int contestId, ContestStage stage, int participantId);
 }

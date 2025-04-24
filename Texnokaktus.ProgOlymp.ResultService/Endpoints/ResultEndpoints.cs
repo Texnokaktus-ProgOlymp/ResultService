@@ -12,7 +12,11 @@ public static class ResultEndpoints
         group.MapGet("/",
                      (int contestId, ContestStage stage, IResultService resultService) =>
                          resultService.GetContestResultsAsync(contestId, stage));
-        
+
+        group.MapGet("/personal",
+                     (int contestId, ContestStage stage, /*TODO From token */ int participantId, IResultService resultService) =>
+                         resultService.GetParticipantResultsAsync(contestId, stage, participantId));
+
         return app;
     }
 }
