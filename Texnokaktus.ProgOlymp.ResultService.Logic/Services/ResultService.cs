@@ -20,15 +20,16 @@ internal class ResultService(IParticipantService participantService, AppDbContex
 
         if (contestResult is null) return null;
 
-        var results = (from problemId in contestResult.Problems.Select(problem => problem.Id)
+        var results = (from problem in contestResult.Problems
                        from participantId in contestResult.Problems
-                                                          .SelectMany(problem => problem.Results.Select(problemResult => problemResult.ParticipantId))
+                                                          .SelectMany(p => p.Results.Select(problemResult => problemResult.ParticipantId))
                                                           .Distinct()
-                       let problemResult = contestResult.Problems.FirstOrDefault(problem => problem.Id == problemId)
+                       let problemResult = contestResult.Problems.FirstOrDefault(p => p.Id == problem.Id)
                                                        ?.Results.FirstOrDefault(result => result.ParticipantId == participantId)
                        let result = new
                        {
-                           ProblemId = problemId,
+                           ProblemId = problem.Id,
+                           ProblemAlias = problem.Alias,
                            ParticipantId = participantId,
                            Result = problemResult is not null
                                         ? new ResultScore(problemResult.BaseScore,
@@ -44,7 +45,9 @@ internal class ResultService(IParticipantService participantService, AppDbContex
                        select new
                        {
                            ParticipantId = grouping.Key,
-                           Results = grouping.Select(arg => new ProblemResult(arg.ProblemId, arg.Result))
+                           Results = grouping.Select(arg => new ProblemResult(arg.ProblemId,
+                                                                              arg.ProblemAlias,
+                                                                              arg.Result))
                        }).ToArray();
 
         var contestData = await participantService.GerParticipantGroups(contestId);
