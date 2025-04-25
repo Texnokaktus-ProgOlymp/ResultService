@@ -8,7 +8,7 @@ public static class ResultEndpoints
 {
     public static IEndpointRouteBuilder MapResultEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/contests/{contestId:int}/{stage}/results");
+        var group = app.MapGroup("/contests/{contestId:int}/{stage}/results");
 
         group.MapGet("/",
                      (int contestId, ContestStage stage, IResultService resultService) =>

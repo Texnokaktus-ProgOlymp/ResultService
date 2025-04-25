@@ -10,11 +10,15 @@
         <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
         <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.71.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="9.0.4" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
         <PackageReference Include="Serilog.Enrichers.AssemblyName" Version="2.0.0" />
         <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
         <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
         <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="8.1.1" />
+        <PackageReference Include="Texnokaktus.ProgOlymp.OpenTelemetry" Version="1.5.1" />
     </ItemGroup>
 
     <ItemGroup>
