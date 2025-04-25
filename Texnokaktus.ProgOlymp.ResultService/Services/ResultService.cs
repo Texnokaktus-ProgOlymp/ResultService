@@ -11,8 +11,7 @@ public class ResultService(Logic.Services.Abstractions.IResultService resultServ
         if (await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { } contestResults)
             return TypedResults.NotFound();
 
-        var results = new ContestResults(contestResults.ContestName,
-                                         contestResults.Problems.Select(problem => problem.MapProblem()),
+        var results = new ContestResults(contestResults.Problems.Select(problem => problem.MapProblem()),
                                          contestResults.ResultGroups.Select(group => group.MapResultGroup()));
 
         return TypedResults.Ok(results);
@@ -22,14 +21,16 @@ public class ResultService(Logic.Services.Abstractions.IResultService resultServ
     {
         if (await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { } contestResults
          || contestResults.ResultGroups
-                          .SelectMany(group => group.Rows)
-                          .FirstOrDefault(row => row.Participant.Id == participantId) is not { } resultRow)
+                          .SelectMany(group => group.Rows.Select(row => new { Group = group.Name, Row = row }))
+                          .FirstOrDefault(row => row.Row.Participant.Id == participantId) is not { } resultRow)
             return TypedResults.NotFound();
 
-        var result = new ParticipantResult(contestResults.Problems.Select(problem => problem.MapProblem()),
-                                           resultRow.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
-                                                                                 problemResult => problemResult.MapProblemResult(score => score.MapExtendedScore())),
-                                           resultRow.TotalScore);
+        var result = new ParticipantResult(resultRow.Row.Place,
+                                           resultRow.Group,
+                                           contestResults.Problems.Select(problem => problem.MapProblem()),
+                                           resultRow.Row.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
+                                                                                     problemResult => problemResult.MapProblemResult(score => score.MapExtendedScore())),
+                                           resultRow.Row.TotalScore);
 
         return TypedResults.Ok(result);
     }
@@ -43,7 +44,8 @@ file static class MappingExtensions
         new(resultGroup.Name, resultGroup.Rows.Select(row => row.MapResultRow()));
 
     private static ResultRow MapResultRow(this Domain.ResultRow resultRow) =>
-        new(resultRow.Participant.MapParticipant(),
+        new(resultRow.Place,
+            resultRow.Participant.MapParticipant(),
             resultRow.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
                                                   problemResult => problemResult.MapProblemResult(score => score.MapScore())),
             resultRow.TotalScore);

@@ -66,7 +66,40 @@ internal class ResultService(IParticipantService participantService, AppDbContex
                                                                                                 arg => arg.ParticipantId,
                                                                                                 (participant, arg) => new ResultRow(participant, arg.Results.ToArray()))
                                                                                           .OrderByDescending(row => row.TotalScore)
+                                                                                          .WithPlaces()
                                                                                           .ToArray()))
                               .ToArray());
+    }
+}
+
+file static class MappingExtensions
+{
+    public static IEnumerable<ResultRow> WithPlaces(this IEnumerable<ResultRow> source)
+    {
+        var previousPlace = 0;
+        var place = 0;
+        decimal? previousScore = null;
+
+        foreach (var row in source)
+        {
+            if (!previousScore.HasValue)
+            {
+                place++;
+                previousScore = row.TotalScore;
+                yield return row.WithPlace(++previousPlace);
+            }
+            else if (previousScore == row.TotalScore)
+            {
+                place++;
+                yield return row.WithPlace(previousPlace);
+            }
+            else
+            {
+                place++;
+                previousPlace = place;
+                previousScore = row.TotalScore;
+                yield return row.WithPlace(previousPlace);
+            }
+        }
     }
 }

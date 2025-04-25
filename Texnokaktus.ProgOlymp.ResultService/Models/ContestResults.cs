@@ -1,3 +1,3 @@
 namespace Texnokaktus.ProgOlymp.ResultService.Models;
 
-public record ContestResults(string ContestName, IEnumerable<Problem> Problems, IEnumerable<ResultGroup> ResultGroups);
+public record ContestResults(IEnumerable<Problem> Problems, IEnumerable<ResultGroup> ResultGroups);
