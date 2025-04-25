@@ -120,7 +120,7 @@ jobs:
         run: sudo docker container rm ${{ env.CONTAINER_NAME }} || true
 
       - name: Run a new container
-        run: sudo docker run -d --env-file ~/env/${{ env.CONTAINER_NAME }}.env -p ${{ env.HTTP_PORT }}:8080 -p ${{ env.GRPC_PORT }}:8081 --name ${{ env.CONTAINER_NAME }} --network progolymp --restart unless-stopped --label "traefik.http.routers.${{ env.CONTAINER_NAME }}.rule=Host(\`progolymp.cttit.ru\`) && PathRegexp(\`(?i)^/api/contests/[0-9]+/[a-z]+/results\`)"  --label "traefik.http.routers.${{ env.CONTAINER_NAME }}.entrypoints=web" ${{ env.IMAGE }}
+        run: sudo docker run -d --env-file ~/env/${{ env.CONTAINER_NAME }}.env -p ${{ env.HTTP_PORT }}:8080 -p ${{ env.GRPC_PORT }}:8081 --name ${{ env.CONTAINER_NAME }} --network progolymp --restart unless-stopped --label "traefik.http.routers.${{ env.CONTAINER_NAME }}.rule=Host(\`progolymp.cttit.ru\`) && PathRegexp(\`(?i)^/api/contests/[0-9]+/[a-z]+/results\`)" --label "traefik.http.routers.${{ env.CONTAINER_NAME }}.entrypoints=web" --label "traefik.http.routers.${{ env.CONTAINER_NAME }}.priority=500" ${{ env.IMAGE }}
 
       - name: Delete old image
         run: sudo docker image rm ${{ steps.old-image.outputs.image }} || true
