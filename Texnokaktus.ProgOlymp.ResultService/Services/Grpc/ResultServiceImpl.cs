@@ -120,6 +120,7 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
                                        resultGroup.Rows
                                                   .Select(resultRow => new ResultRow
                                                    {
+                                                       Place = resultRow.Place,
                                                        ParticipantId = resultRow.Participant.Id,
                                                        Results =
                                                        {
@@ -146,12 +147,14 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
                           ?? throw new ContestNotFoundException(request.ContestId, stage);
 
         if (contestResults.ResultGroups
-                          .SelectMany(resultGroup => resultGroup.Rows)
-                          .FirstOrDefault(row => row.Participant.Id == request.ParticipantId) is not { } resultRow)
+                          .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
+                          .FirstOrDefault(row => row.Row.Participant.Id == request.ParticipantId) is not { } resultRow)
             throw new ParticipantResultsNotFound(request.ContestId, stage, request.ParticipantId);
 
         return new()
         {
+            Place = resultRow.Row.Place,
+            ResultGroupName = resultRow.Group,
             Problems =
             {
                 contestResults.Problems
@@ -164,14 +167,15 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
             },
             Results =
             {
-                resultRow.ProblemResults
+                resultRow.Row
+                         .ProblemResults
                          .Select(result => new ProblemResult
                           {
                               ProblemId = result.ProblemId,
                               Score = result.Score?.MapResultScore()
                           })
             },
-            TotalScore = resultRow.TotalScore
+            TotalScore = resultRow.Row.TotalScore
         };
     }
 
