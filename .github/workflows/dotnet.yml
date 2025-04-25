@@ -1,0 +1,126 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.x.x
+      - name: Setup NuGet
+        run: dotnet nuget add source --username Texnokaktus-ProgOlymp --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Texnokaktus-ProgOlymp/index.json"
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+  docker:
+
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: result-service
+
+    outputs:
+      name: ${{ steps.get-image-name.outputs.image-name }}
+      hash: ${{ steps.build.outputs.imageid }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Version
+        id: get-version
+        run: echo "version=1.${{ github.run_number }}.${{ github.run_attempt }}" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          sep-tags: ','
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags:
+            type=semver,pattern={{version}},value=v${{ steps.get-version.outputs.version }}
+
+      - name: Get image name
+        id: get-image-name
+        run: echo "image-name=${{ steps.meta.outputs.tags }}" | cut -d, -f1 >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: |
+            GHPAT=${{ secrets.GITHUB_TOKEN }}
+            VERSION=${{ steps.get-version.outputs.version }}
+          file: Texnokaktus.ProgOlymp.ResultService/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    
+    needs: docker
+    runs-on: cttit
+    if: github.ref == 'refs/heads/master'
+    
+    env:
+      IMAGE: ${{ needs.docker.outputs.name }}
+      CONTAINER_NAME: result-service
+      HTTP_PORT: 5301
+      GRPC_PORT: 5302
+
+    steps:
+      - name: Get old image hash
+        id: old-image
+        run: sudo docker container inspect ${{ env.CONTAINER_NAME }} --format='{{.Config.Image}}' | awk '{print "image="$1}' >> $GITHUB_OUTPUT
+
+      - name: Pull new container
+        run: sudo docker pull ${{ env.IMAGE }}
+
+      - name: Stop running container
+        run: sudo docker stop ${{ env.CONTAINER_NAME }} || true
+
+      - name: Remove old container
+        run: sudo docker container rm ${{ env.CONTAINER_NAME }} || true
+
+      - name: Run a new container
+        run: sudo docker run -d --env-file ~/env/${{ env.CONTAINER_NAME }}.env -p ${{ env.HTTP_PORT }}:8080 -p ${{ env.GRPC_PORT }}:8081 --name ${{ env.CONTAINER_NAME }} --network progolymp --restart unless-stopped --label "traefik.http.routers.${{ env.CONTAINER_NAME }}.rule=Host(\`progolymp.cttit.ru\`) && PathRegexp(\`(?i)^/api/contests/[0-9]+/[a-z]+/results\`)"  --label "traefik.http.routers.${{ env.CONTAINER_NAME }}.entrypoints=web" ${{ env.IMAGE }}
+
+      - name: Delete old image
+        run: sudo docker image rm ${{ steps.old-image.outputs.image }} || true
