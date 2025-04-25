@@ -1,8 +1,6 @@
-using Texnokaktus.ProgOlymp.ResultService.Logic.Models;
-
 namespace Texnokaktus.ProgOlymp.ResultService.Logic.Services.Abstractions;
 
-internal interface IParticipantService
+public interface IParticipantService
 {
-    Task<ContestData> GerParticipantGroups(int contestId);
+    Task<int?> GetParticipantIdAsync(int contestId, int userId);
 }

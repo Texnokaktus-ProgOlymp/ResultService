@@ -7,6 +7,7 @@ namespace Texnokaktus.ProgOlymp.ResultService.Logic;
 public static class DiExtensions
 {
     public static IServiceCollection AddLogicServices(this IServiceCollection services) =>
-        services.AddScoped<IParticipantService, ParticipantService>()
+        services.AddScoped<IInternalParticipantService, InternalParticipantService>()
+                .AddScoped<IParticipantService, ParticipantService>()
                 .AddScoped<IResultService, Services.ResultService>();
 }

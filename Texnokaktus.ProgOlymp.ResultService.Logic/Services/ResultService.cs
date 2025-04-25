@@ -5,7 +5,7 @@ using Texnokaktus.ProgOlymp.ResultService.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Logic.Services;
 
-internal class ResultService(IParticipantService participantService, AppDbContext context) : IResultService
+internal class ResultService(IInternalParticipantService participantService, AppDbContext context) : IResultService
 {
     public async Task<ContestResults?> GetResultsAsync(int contestId, DataAccess.Entities.ContestStage stage)
     {

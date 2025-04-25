@@ -1,3 +1,4 @@
+using Texnokaktus.ProgOlymp.ResultService.Extensions;
 using Texnokaktus.ProgOlymp.ResultService.Models;
 using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 
@@ -14,8 +15,9 @@ public static class ResultEndpoints
                          resultService.GetContestResultsAsync(contestId, stage));
 
         group.MapGet("/personal",
-                     (int contestId, ContestStage stage, /*TODO From token */ int participantId, IResultService resultService) =>
-                         resultService.GetParticipantResultsAsync(contestId, stage, participantId));
+                     (int contestId, ContestStage stage, IResultService resultService, HttpContext context) =>
+                         resultService.GetParticipantResultsAsync(contestId, stage, context.GetUserId()))
+             .RequireAuthorization();
 
         return app;
     }

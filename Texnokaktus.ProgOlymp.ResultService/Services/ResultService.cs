@@ -4,7 +4,8 @@ using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Services;
 
-public class ResultService(Logic.Services.Abstractions.IResultService resultService) : IResultService
+public class ResultService(Logic.Services.Abstractions.IResultService resultService,
+                           Logic.Services.Abstractions.IParticipantService participantService) : IResultService
 {
     public async Task<Results<Ok<ContestResults>, NotFound>> GetContestResultsAsync(int contestId, ContestStage stage)
     {
@@ -17,9 +18,10 @@ public class ResultService(Logic.Services.Abstractions.IResultService resultServ
         return TypedResults.Ok(results);
     }
 
-    public async Task<Results<Ok<ParticipantResult>, NotFound>> GetParticipantResultsAsync(int contestId, ContestStage stage, int participantId)
+    public async Task<Results<Ok<ParticipantResult>, NotFound>> GetParticipantResultsAsync(int contestId, ContestStage stage, int userId)
     {
-        if (await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { } contestResults
+        if (await participantService.GetParticipantIdAsync(contestId, userId) is not { } participantId
+         || await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { } contestResults
          || contestResults.ResultGroups
                           .SelectMany(group => group.Rows.Select(row => new { Group = group.Name, Row = row }))
                           .FirstOrDefault(row => row.Row.Participant.Id == participantId) is not { } resultRow)
