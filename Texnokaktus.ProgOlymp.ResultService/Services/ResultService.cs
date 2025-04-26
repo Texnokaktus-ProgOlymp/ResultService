@@ -9,7 +9,7 @@ public class ResultService(Logic.Services.Abstractions.IResultService resultServ
 {
     public async Task<Results<Ok<ContestResults>, NotFound>> GetContestResultsAsync(int contestId, ContestStage stage)
     {
-        if (await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { } contestResults)
+        if (await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { Published: true } contestResults)
             return TypedResults.NotFound();
 
         var results = new ContestResults(contestResults.Problems.Select(problem => problem.MapProblem()),
