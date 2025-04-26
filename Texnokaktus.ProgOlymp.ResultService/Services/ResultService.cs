@@ -21,7 +21,7 @@ public class ResultService(Logic.Services.Abstractions.IResultService resultServ
     public async Task<Results<Ok<ParticipantResult>, NotFound>> GetParticipantResultsAsync(int contestId, ContestStage stage, int userId)
     {
         if (await participantService.GetParticipantIdAsync(contestId, userId) is not { } participantId
-         || await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { } contestResults
+         || await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { Published: true } contestResults
          || contestResults.ResultGroups
                           .SelectMany(group => group.Rows.Select(row => new { Group = group.Name, Row = row }))
                           .FirstOrDefault(row => row.Row.Participant.Id == participantId) is not { } resultRow)

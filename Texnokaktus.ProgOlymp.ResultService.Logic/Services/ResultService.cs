@@ -52,7 +52,7 @@ internal class ResultService(IInternalParticipantService participantService, App
 
         var contestData = await participantService.GerParticipantGroups(contestId);
 
-        return new(contestData.Name,
+        return new(contestResult.Published,
                    contestResult.Problems
                                 .Select(problem => new Problem(problem.Id,
                                                                problem.Alias,
