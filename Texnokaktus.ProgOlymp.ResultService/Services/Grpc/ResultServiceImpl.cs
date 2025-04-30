@@ -2,13 +2,14 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
+using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Exceptions.Rpc;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Services.Abstractions;
+using Texnokaktus.ProgOlymp.ResultService.Logic.QueryHandlers;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
-public class ResultServiceImpl(AppDbContext dbContext, IResultService resultService) : Common.Contracts.Grpc.Results.ResultService.ResultServiceBase
+public class ResultServiceImpl(AppDbContext dbContext, IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler) : Common.Contracts.Grpc.Results.ResultService.ResultServiceBase
 {
     public override async Task<Contest> GetContest(GetContestRequest request, ServerCallContext context)
     {
@@ -94,7 +95,7 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
     {
         var stage = request.Stage.MapContestStage();
 
-        var contestResults = await resultService.GetResultsAsync(request.ContestId, stage)
+        var contestResults = await resultQueryHandler.HandleAsync(new(request.ContestId, stage), context.CancellationToken)
                           ?? throw new ContestNotFoundException(request.ContestId, stage);
 
         return new()
@@ -143,7 +144,7 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
     {
         var stage = request.Stage.MapContestStage();
 
-        var contestResults = await resultService.GetResultsAsync(request.ContestId, stage)
+        var contestResults = await resultQueryHandler.HandleAsync(new(request.ContestId, stage), context.CancellationToken)
                           ?? throw new ContestNotFoundException(request.ContestId, stage);
 
         if (contestResults.ResultGroups

@@ -28,6 +28,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\modules\Common.Contracts\Texnokaktus.ProgOlymp.Common.Contracts\Texnokaktus.ProgOlymp.Common.Contracts.csproj" />
+      <ProjectReference Include="..\Texnokaktus.ProgOlymp.Cqrs\Texnokaktus.ProgOlymp.Cqrs.csproj" />
       <ProjectReference Include="..\Texnokaktus.ProgOlymp.ResultService.DataAccess\Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj" />
       <ProjectReference Include="..\Texnokaktus.ProgOlymp.ResultService.Domain\Texnokaktus.ProgOlymp.ResultService.Domain.csproj" />
       <ProjectReference Include="..\Texnokaktus.ProgOlymp.ResultService.Infrastructure\Texnokaktus.ProgOlymp.ResultService.Infrastructure.csproj" />

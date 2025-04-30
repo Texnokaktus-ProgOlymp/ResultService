@@ -1,15 +1,17 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Texnokaktus.ProgOlymp.Cqrs;
+using Texnokaktus.ProgOlymp.ResultService.Logic.QueryHandlers;
 using Texnokaktus.ProgOlymp.ResultService.Models;
 using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Services;
 
-public class ResultService(Logic.Services.Abstractions.IResultService resultService,
+public class ResultService(IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler,
                            Logic.Services.Abstractions.IParticipantService participantService) : IResultService
 {
     public async Task<Results<Ok<ContestResults>, NotFound>> GetContestResultsAsync(int contestId, ContestStage stage)
     {
-        if (await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { Published: true } contestResults)
+        if (await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults)
             return TypedResults.NotFound();
 
         var results = new ContestResults(contestResults.Problems.Select(problem => problem.MapProblem()),
@@ -21,7 +23,7 @@ public class ResultService(Logic.Services.Abstractions.IResultService resultServ
     public async Task<Results<Ok<ParticipantResult>, NotFound>> GetParticipantResultsAsync(int contestId, ContestStage stage, int userId)
     {
         if (await participantService.GetParticipantIdAsync(contestId, userId) is not { } participantId
-         || await resultService.GetResultsAsync(contestId, stage.MapContestStage()) is not { Published: true } contestResults
+         || await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults
          || contestResults.ResultGroups
                           .SelectMany(group => group.Rows.Select(row => new { Group = group.Name, Row = row }))
                           .FirstOrDefault(row => row.Row.Participant.Id == participantId) is not { } resultRow)
