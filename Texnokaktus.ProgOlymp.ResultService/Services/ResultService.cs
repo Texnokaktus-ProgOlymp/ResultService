@@ -7,7 +7,7 @@ using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 namespace Texnokaktus.ProgOlymp.ResultService.Services;
 
 public class ResultService(IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler,
-                           Logic.Services.Abstractions.IParticipantService participantService) : IResultService
+                           IQueryHandler<ParticipantIdQuery, int?> participantIdHandler) : IResultService
 {
     public async Task<Results<Ok<ContestResults>, NotFound>> GetContestResultsAsync(int contestId, ContestStage stage)
     {
@@ -22,7 +22,7 @@ public class ResultService(IQueryHandler<FullResultQuery, Domain.ContestResults?
 
     public async Task<Results<Ok<ParticipantResult>, NotFound>> GetParticipantResultsAsync(int contestId, ContestStage stage, int userId)
     {
-        if (await participantService.GetParticipantIdAsync(contestId, userId) is not { } participantId
+        if (await participantIdHandler.HandleAsync(new(contestId, userId)) is not { } participantId
          || await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults
          || contestResults.ResultGroups
                           .SelectMany(group => group.Rows.Select(row => new { Group = group.Name, Row = row }))
