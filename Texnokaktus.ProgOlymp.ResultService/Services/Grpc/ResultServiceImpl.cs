@@ -1,17 +1,15 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
 using Texnokaktus.ProgOlymp.Cqrs;
-using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Commands;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Queries;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
-public class ResultServiceImpl(AppDbContext dbContext,
-                               ICommandHandler<CreateContestCommand> createContestHandler,
+public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createContestHandler,
+                               IQueryHandler<ContestQuery, Domain.Contest> getContestHandler,
                                ICommandHandler<CreateProblemCommand> createProblemHandler,
                                ICommandHandler<CreateResultCommand> createResultHandler,
                                IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler)
@@ -19,23 +17,16 @@ public class ResultServiceImpl(AppDbContext dbContext,
 {
     public override async Task<Contest> GetContest(GetContestRequest request, ServerCallContext context)
     {
-        var contestStage = request.Stage.MapContestStage();
-
-        var contestResult = await dbContext.ContestResults
-                                           .AsNoTracking()
-                                           .Include(result => result.Problems)
-                                           .FirstOrDefaultAsync(result => result.ContestId == request.ContestId
-                                                                       && result.Stage == contestStage)
-                         ?? throw new ContestNotFoundException(request.ContestId, contestStage);
+        var contest = await  getContestHandler.HandleAsync(new(request.ContestId, request.Stage.MapContestStage()));
 
         return new()
         {
-            Id = contestResult.ContestId,
-            Stage = contestResult.Stage.MapContestStage(),
-            StageId = contestResult.StageId,
+            Id = contest.Id,
+            Stage = contest.Stage.MapContestStage(),
+            StageId = contest.StageId,
             Problems =
             {
-                contestResult.Problems.Select(problem => new Problem
+                contest.Problems.Select(problem => new Problem
                 {
                     Id = problem.Id,
                     Alias = problem.Alias,

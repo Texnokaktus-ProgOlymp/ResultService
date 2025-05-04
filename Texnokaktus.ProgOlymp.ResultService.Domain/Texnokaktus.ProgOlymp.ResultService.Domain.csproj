@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Texnokaktus.ProgOlymp.ResultService.DataAccess\Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj" />
+    </ItemGroup>
+
 </Project>
