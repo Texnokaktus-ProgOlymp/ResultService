@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
-using Texnokaktus.ProgOlymp.ResultService.Logic.CommandHandlers;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Commands;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Commands.Handlers;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Models;
-using Texnokaktus.ProgOlymp.ResultService.Logic.QueryHandlers;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Queries;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Services;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Services.Abstractions;
 

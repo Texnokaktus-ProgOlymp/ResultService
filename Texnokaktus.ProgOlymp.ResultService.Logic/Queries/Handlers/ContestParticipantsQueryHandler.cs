@@ -2,7 +2,7 @@ using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Models;
 
-namespace Texnokaktus.ProgOlymp.ResultService.Logic.QueryHandlers;
+namespace Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers;
 
 internal class ContestParticipantsQueryHandler(Common.Contracts.Grpc.Participants.ParticipantService.ParticipantServiceClient participantServiceClient) : IQueryHandler<ContestParticipantsQuery, IEnumerable<ParticipantGroup>>
 {

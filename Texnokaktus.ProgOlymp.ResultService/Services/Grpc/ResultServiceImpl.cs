@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
 using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
-using Texnokaktus.ProgOlymp.ResultService.Logic.CommandHandlers;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Commands;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
-using Texnokaktus.ProgOlymp.ResultService.Logic.QueryHandlers;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Queries;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 

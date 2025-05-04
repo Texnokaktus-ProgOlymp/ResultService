@@ -4,7 +4,7 @@ using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Models;
 
-namespace Texnokaktus.ProgOlymp.ResultService.Logic.QueryHandlers;
+namespace Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers;
 
 internal class FullResultQueryHandler(IQueryHandler<ContestParticipantsQuery, IEnumerable<ParticipantGroup>> contestParticipantsQueryHandler, AppDbContext context) : IQueryHandler<FullResultQuery, ContestResults?>
 {

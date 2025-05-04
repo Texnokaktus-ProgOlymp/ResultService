@@ -3,7 +3,7 @@ using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
 
-namespace Texnokaktus.ProgOlymp.ResultService.Logic.CommandHandlers;
+namespace Texnokaktus.ProgOlymp.ResultService.Logic.Commands.Handlers;
 
 public class CreateResultCommandHandler(AppDbContext dbContext) : ICommandHandler<CreateResultCommand>
 {

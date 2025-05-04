@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Texnokaktus.ProgOlymp.Cqrs;
-using Texnokaktus.ProgOlymp.ResultService.Logic.QueryHandlers;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Queries;
 using Texnokaktus.ProgOlymp.ResultService.Models;
 using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 
@@ -75,7 +75,7 @@ file static class MappingExtensions
         new(problemResult.Score is { } score
             ? resultScoreMapper.Invoke(score)
             : null);
-    
+
     public static DataAccess.Entities.ContestStage MapContestStage(this ContestStage stage) => stage switch
     {
         ContestStage.Preliminary => DataAccess.Entities.ContestStage.Preliminary,
