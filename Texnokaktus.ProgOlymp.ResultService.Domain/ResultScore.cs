@@ -6,5 +6,5 @@ public record ResultScore(decimal BaseScore, IReadOnlyCollection<ScoreAdjustment
                                           ? Adjustments.Sum(adjustment => adjustment.Adjustment)
                                           : null;
 
-    public decimal? TotalScore => BaseScore + (AdjustmentsSum ?? 0);
+    public decimal TotalScore => BaseScore + (AdjustmentsSum ?? 0);
 }

@@ -13,6 +13,10 @@
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
         <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="9.0.4" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
         <PackageReference Include="Serilog.Enrichers.AssemblyName" Version="2.0.0" />
         <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
@@ -24,6 +28,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\modules\Common.Contracts\Texnokaktus.ProgOlymp.Common.Contracts\Texnokaktus.ProgOlymp.Common.Contracts.csproj" />
+      <ProjectReference Include="..\Texnokaktus.ProgOlymp.Cqrs\Texnokaktus.ProgOlymp.Cqrs.csproj" />
       <ProjectReference Include="..\Texnokaktus.ProgOlymp.ResultService.DataAccess\Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj" />
       <ProjectReference Include="..\Texnokaktus.ProgOlymp.ResultService.Domain\Texnokaktus.ProgOlymp.ResultService.Domain.csproj" />
       <ProjectReference Include="..\Texnokaktus.ProgOlymp.ResultService.Infrastructure\Texnokaktus.ProgOlymp.ResultService.Infrastructure.csproj" />

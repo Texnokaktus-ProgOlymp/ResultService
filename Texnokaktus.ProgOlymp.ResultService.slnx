@@ -2,6 +2,7 @@
   <Folder Name="/Modules/">
     <Project Path="modules\Common.Contracts\Texnokaktus.ProgOlymp.Common.Contracts\Texnokaktus.ProgOlymp.Common.Contracts.csproj" Type="Classic C#" />
   </Folder>
+  <Project Path="Texnokaktus.ProgOlymp.Cqrs\Texnokaktus.ProgOlymp.Cqrs.csproj" Type="Classic C#" />
   <Project Path="Texnokaktus.ProgOlymp.ResultService.DataAccess\Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj" />
   <Project Path="Texnokaktus.ProgOlymp.ResultService.Domain\Texnokaktus.ProgOlymp.ResultService.Domain.csproj" Type="Classic C#" />
   <Project Path="Texnokaktus.ProgOlymp.ResultService.Infrastructure\Texnokaktus.ProgOlymp.ResultService.Infrastructure.csproj" Type="Classic C#" />

@@ -1,25 +1,26 @@
 using Microsoft.EntityFrameworkCore;
+using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Services.Abstractions;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Models;
 
-namespace Texnokaktus.ProgOlymp.ResultService.Logic.Services;
+namespace Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers;
 
-internal class ResultService(IInternalParticipantService participantService, AppDbContext context) : IResultService
+internal class FullResultQueryHandler(IQueryHandler<ContestParticipantsQuery, IEnumerable<ParticipantGroup>> contestParticipantsQueryHandler, AppDbContext context) : IQueryHandler<FullResultQuery, ContestResults?>
 {
-    public async Task<ContestResults?> GetResultsAsync(int contestId, DataAccess.Entities.ContestStage stage)
+    public async Task<ContestResults?> HandleAsync(FullResultQuery query, CancellationToken cancellationToken = default)
     {
         var contestResult = await context.ContestResults
                                          .AsSplitQuery()
                                          .Include(contestResult => contestResult.Problems)
                                          .ThenInclude(problem => problem.Results)
                                          .ThenInclude(result => result.Adjustments)
-                                         .Where(contestResult => contestResult.ContestId == contestId
-                                                              && contestResult.Stage == stage)
-                                         .FirstOrDefaultAsync();
+                                         .Where(contestResult => contestResult.ContestId == query.ContestId
+                                                              && contestResult.Stage == query.Stage)
+                                         .FirstOrDefaultAsync(cancellationToken);
 
         if (contestResult is null) return null;
-
+        
         var results = (from problem in contestResult.Problems
                        from participantId in contestResult.Problems
                                                           .SelectMany(p => p.Results.Select(problemResult => problemResult.ParticipantId))
@@ -49,8 +50,8 @@ internal class ResultService(IInternalParticipantService participantService, App
                                                                               arg.ProblemAlias,
                                                                               arg.Result))
                        }).ToArray();
-
-        var contestData = await participantService.GerParticipantGroups(contestId);
+        
+        var participantGroups = await contestParticipantsQueryHandler.HandleAsync(new(query.ContestId), cancellationToken);
 
         return new(contestResult.Published,
                    contestResult.Problems
@@ -58,17 +59,16 @@ internal class ResultService(IInternalParticipantService participantService, App
                                                                problem.Alias,
                                                                problem.Name))
                                 .ToArray(),
-                   contestData.ParticipantGroups
-                              .Select(participantGroup => new ResultGroup(participantGroup.Name,
-                                                                          participantGroup.Participants
-                                                                                          .Join(results,
-                                                                                                participant => participant.Id,
-                                                                                                arg => arg.ParticipantId,
-                                                                                                (participant, arg) => new ResultRow(participant, arg.Results.ToArray()))
-                                                                                          .OrderByDescending(row => row.TotalScore)
-                                                                                          .WithPlaces()
-                                                                                          .ToArray()))
-                              .ToArray());
+                   participantGroups.Select(participantGroup => new ResultGroup(participantGroup.Name,
+                                                                                participantGroup.Participants
+                                                                                                .Join(results,
+                                                                                                      participant => participant.Id,
+                                                                                                      arg => arg.ParticipantId,
+                                                                                                      (participant, arg) => new ResultRow(participant, arg.Results.ToArray()))
+                                                                                                .OrderByDescending(row => row.TotalScore)
+                                                                                                .WithPlaces()
+                                                                                                .ToArray()))
+                                    .ToArray());
     }
 }
 

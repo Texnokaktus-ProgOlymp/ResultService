@@ -12,8 +12,6 @@ using Texnokaktus.ProgOlymp.ResultService.Endpoints;
 using Texnokaktus.ProgOlymp.ResultService.Extensions;
 using Texnokaktus.ProgOlymp.ResultService.Infrastructure;
 using Texnokaktus.ProgOlymp.ResultService.Logic;
-using Texnokaktus.ProgOlymp.ResultService.Services;
-using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,8 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
        .AddDataAccess(optionsBuilder => optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("DefaultDb"))
                                                       .EnableSensitiveDataLogging(builder.Environment.IsDevelopment()))
-       .AddLogicServices()
-       .AddScoped<IResultService, ResultService>();
+       .AddLogicServices();
 
 var connectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(builder.Configuration.GetConnectionString("DefaultRedis")!);
 builder.Services.AddSingleton<IConnectionMultiplexer>(connectionMultiplexer);
