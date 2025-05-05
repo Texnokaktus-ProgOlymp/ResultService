@@ -15,6 +15,7 @@ public static class DiExtensions
         services.AddCommandHandler<CreateContestCommandHandler, CreateContestCommand>(ServiceLifetime.Scoped)
                 .AddCommandHandler<CreateProblemCommandHandler, CreateProblemCommand>(ServiceLifetime.Scoped)
                 .AddCommandHandler<CreateResultCommandHandler, CreateResultCommand>(ServiceLifetime.Scoped)
+                .AddCommandHandler<CreateResultAdjustmentCommandHandler, CreateResultAdjustmentCommand, int>(ServiceLifetime.Scoped)
                 .AddQueryHandler<ParticipantIdQueryHandler, ParticipantIdQuery, int?>(ServiceLifetime.Scoped)
                 .AddQueryHandler<ContestQueryHandler, ContestQuery, Contest>(ServiceLifetime.Scoped)
                 .AddQueryHandler<ContestParticipantsQueryHandler, ContestParticipantsQuery, IEnumerable<ParticipantGroup>>(ServiceLifetime.Scoped)

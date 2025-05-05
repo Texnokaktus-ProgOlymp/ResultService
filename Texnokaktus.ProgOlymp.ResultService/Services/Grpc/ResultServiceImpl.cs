@@ -5,17 +5,21 @@ using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Commands;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Queries;
+using Contest = Texnokaktus.ProgOlymp.ResultService.Domain.Contest;
+using ContestResults = Texnokaktus.ProgOlymp.ResultService.Domain.ContestResults;
+using ContestStage = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.ContestStage;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
 public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createContestHandler,
-                               IQueryHandler<ContestQuery, Domain.Contest> getContestHandler,
+                               IQueryHandler<ContestQuery, Contest> getContestHandler,
                                ICommandHandler<CreateProblemCommand> createProblemHandler,
                                ICommandHandler<CreateResultCommand> createResultHandler,
-                               IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler)
+                               ICommandHandler<CreateResultAdjustmentCommand, int> createResultAdjustmentHandler,
+                               IQueryHandler<FullResultQuery, ContestResults?> resultQueryHandler)
     : Common.Contracts.Grpc.Results.ResultService.ResultServiceBase
 {
-    public override async Task<Contest> GetContest(GetContestRequest request, ServerCallContext context)
+    public override async Task<Common.Contracts.Grpc.Results.Contest> GetContest(GetContestRequest request, ServerCallContext context)
     {
         var contest = await getContestHandler.HandleAsync(new(request.ContestId, request.Stage.MapContestStage()));
 
@@ -50,7 +54,7 @@ public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createConte
         return new();
     }
 
-    public override async Task<ContestResults> GetResults(GetResultsRequest request, ServerCallContext context)
+    public override async Task<Common.Contracts.Grpc.Results.ContestResults> GetResults(GetResultsRequest request, ServerCallContext context)
     {
         var stage = request.Stage.MapContestStage();
 
@@ -145,24 +149,34 @@ public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createConte
 
         return new();
     }
+
+    public override async Task<AddResultAdjustmentResponse> AddResultAdjustment(AddResultAdjustmentRequest request, ServerCallContext context)
+    {
+        var id = await createResultAdjustmentHandler.HandleAsync(new(request.ContestId, request.Stage.MapContestStage(), request.Alias, request.ParticipantId, request.Adjustment, request.Comment), context.CancellationToken);
+
+        return new()
+        {
+            Id = id
+        };
+    }
 }
 
 file static class MappingExtensions
 {
-    public static DataAccess.Entities.ContestStage MapContestStage(this ContestStage contestStage) =>
+    public static ContestStage MapContestStage(this Common.Contracts.Grpc.Results.ContestStage contestStage) =>
         contestStage switch
         {
-            ContestStage.Preliminary => DataAccess.Entities.ContestStage.Preliminary,
-            ContestStage.Final       => DataAccess.Entities.ContestStage.Final,
+            Common.Contracts.Grpc.Results.ContestStage.Preliminary => ContestStage.Preliminary,
+            Common.Contracts.Grpc.Results.ContestStage.Final       => ContestStage.Final,
             _                        => throw new ArgumentOutOfRangeException(nameof(contestStage), contestStage, null)
         };
 
-    public static ContestStage MapContestStage(this DataAccess.Entities.ContestStage contestStage) =>
+    public static Common.Contracts.Grpc.Results.ContestStage MapContestStage(this ContestStage contestStage) =>
         contestStage switch
         {
-            DataAccess.Entities.ContestStage.Preliminary => ContestStage.Preliminary,
-            DataAccess.Entities.ContestStage.Final => ContestStage.Final,
-            _ => throw new ArgumentOutOfRangeException(nameof(contestStage), contestStage, null)
+            ContestStage.Preliminary => Common.Contracts.Grpc.Results.ContestStage.Preliminary,
+            ContestStage.Final       => Common.Contracts.Grpc.Results.ContestStage.Final,
+            _                        => throw new ArgumentOutOfRangeException(nameof(contestStage), contestStage, null)
         };
 
     public static ResultScore MapResultScore(this Domain.ResultScore resultScore) =>

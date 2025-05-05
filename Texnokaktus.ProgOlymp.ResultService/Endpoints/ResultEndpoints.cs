@@ -33,8 +33,7 @@ public static class ResultEndpoints
                      });
 
         group.MapGet("/personal",
-                     async Task<Results<Ok<ParticipantResult>, NotFound>>(int contestId, Models.ContestStage stage, IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler,
-                                                                          IQueryHandler<ParticipantIdQuery, int?> participantIdHandler, HttpContext context) =>
+                     async Task<Results<Ok<ParticipantResult>, NotFound>>(int contestId, Models.ContestStage stage, IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler, IQueryHandler<ParticipantIdQuery, int?> participantIdHandler, HttpContext context) =>
                      {
                          if (await participantIdHandler.HandleAsync(new(contestId, context.GetUserId())) is not { } participantId
                           || await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults
