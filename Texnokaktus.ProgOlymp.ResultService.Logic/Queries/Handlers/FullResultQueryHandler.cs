@@ -11,6 +11,7 @@ internal class FullResultQueryHandler(IQueryHandler<ContestParticipantsQuery, IE
     public async Task<ContestResults?> HandleAsync(FullResultQuery query, CancellationToken cancellationToken = default)
     {
         var contestResult = await context.ContestResults
+                                         .AsNoTracking()
                                          .AsSplitQuery()
                                          .Include(contestResult => contestResult.Problems)
                                          .ThenInclude(problem => problem.Results)
