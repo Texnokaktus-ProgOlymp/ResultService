@@ -17,7 +17,7 @@ public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createConte
 {
     public override async Task<Contest> GetContest(GetContestRequest request, ServerCallContext context)
     {
-        var contest = await  getContestHandler.HandleAsync(new(request.ContestId, request.Stage.MapContestStage()));
+        var contest = await getContestHandler.HandleAsync(new(request.ContestId, request.Stage.MapContestStage()));
 
         return new()
         {
