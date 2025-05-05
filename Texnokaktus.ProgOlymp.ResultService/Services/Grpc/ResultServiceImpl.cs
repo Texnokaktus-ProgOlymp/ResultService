@@ -109,7 +109,7 @@ public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createConte
         if (contestResults.ResultGroups
                           .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
                           .FirstOrDefault(row => row.Row.Participant.Id == request.ParticipantId) is not { } resultRow)
-            throw new ParticipantResultsNotFound(request.ContestId, stage, request.ParticipantId);
+            throw new ParticipantResultsNotFoundException(request.ContestId, stage, request.ParticipantId);
 
         return new()
         {
