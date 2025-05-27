@@ -30,7 +30,9 @@ builder.Services
 
 builder.Services.AddGrpcClients(builder.Configuration);
 
-builder.Services.AddOpenApi(options => options.AddSchemaTransformer<SchemaTransformer>());
+builder.Services.AddOpenApi(options => options.AddSchemaTransformer<SchemaTransformer>()
+                                              .AddDocumentTransformer<BearerSecuritySchemeTransformer>());
+
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddGrpc();
