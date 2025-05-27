@@ -58,7 +58,7 @@ app.UseOpenTelemetryPrometheusScrapingEndpoint();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwaggerUI(options => options.ConfigObject.Urls = [new() { Name = "v1", Url = "/openapi/v1.json" }]);
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "v1"));
     app.MapGrpcReflectionService();
 }
 

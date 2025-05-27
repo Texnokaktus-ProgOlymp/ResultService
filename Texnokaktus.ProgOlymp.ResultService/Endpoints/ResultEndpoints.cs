@@ -90,9 +90,9 @@ file static class MappingExtensions
 
     public static ProblemResult<TScore> MapProblemResult<TScore>(this ProblemResult problemResult, Func<ResultScore, TScore> resultScoreMapper) where TScore : class =>
         new(problemResult.Score is { } score
-            ? resultScoreMapper.Invoke(score)
-            : null);
-    
+                ? resultScoreMapper.Invoke(score)
+                : null);
+
     public static ContestStage MapContestStage(this Models.ContestStage stage) => stage switch
     {
         Models.ContestStage.Preliminary => ContestStage.Preliminary,
