@@ -29,9 +29,7 @@ internal sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvi
             foreach (var operation in document.Paths.Values
                                               .SelectMany(path => path.Operations)
                                               .Where(operation => context.GetActionDescriptor(operation.Value) is { } descriptor
-                                                               && descriptor.EndpointMetadata
-                                                                            .OfType<AuthorizeAttribute>()
-                                                                            .Any()))
+                                                               && descriptor.RequiresAuthorization()))
             {
                 operation.Value.Security.Add(new()
                 {
@@ -46,6 +44,14 @@ internal sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvi
 
 file static class OpenApiExtensions
 {
+    public static bool RequiresAuthorization(this ActionDescriptor actionDescriptor) =>
+        actionDescriptor.EndpointMetadata
+                        .OfType<AuthorizeAttribute>()
+                        .Any()
+     && !actionDescriptor.EndpointMetadata
+                         .OfType<AllowAnonymousAttribute>()
+                         .Any();
+
     public static ActionDescriptor? GetActionDescriptor(this OpenApiDocumentTransformerContext context, OpenApiOperation apiOperation) =>
         apiOperation.Annotations.TryGetValue("x-aspnetcore-id", out var obj)
      && obj is string id
