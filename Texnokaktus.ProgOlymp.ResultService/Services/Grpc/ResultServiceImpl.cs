@@ -85,17 +85,18 @@ public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createConte
                                                   .Select(resultRow => new ResultRow
                                                    {
                                                        Place = resultRow.Place,
-                                                       ParticipantId = resultRow.Participant.Id,
+                                                       ParticipantId = resultRow.Item.Participant.Id,
                                                        Results =
                                                        {
-                                                           resultRow.ProblemResults
+                                                           resultRow.Item
+                                                                    .ProblemResults
                                                                     .Select(result => new ProblemResult
                                                                      {
                                                                          ProblemId = result.ProblemId,
                                                                          Score = result.Score?.MapResultScore()
                                                                      })
                                                        },
-                                                       TotalScore = resultRow.TotalScore
+                                                       TotalScore = resultRow.Item.TotalScore
                                                    })
                                    }
                                })
@@ -112,7 +113,7 @@ public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createConte
 
         if (contestResults.ResultGroups
                           .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
-                          .FirstOrDefault(row => row.Row.Participant.Id == request.ParticipantId) is not { } resultRow)
+                          .FirstOrDefault(row => row.Row.Item.Participant.Id == request.ParticipantId) is not { } resultRow)
             throw new ParticipantResultsNotFoundException(request.ContestId, stage, request.ParticipantId);
 
         return new()
@@ -132,6 +133,7 @@ public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createConte
             Results =
             {
                 resultRow.Row
+                         .Item
                          .ProblemResults
                          .Select(result => new ProblemResult
                           {
@@ -139,7 +141,7 @@ public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createConte
                               Score = result.Score?.MapResultScore()
                           })
             },
-            TotalScore = resultRow.Row.TotalScore
+            TotalScore = resultRow.Row.Item.TotalScore
         };
     }
 

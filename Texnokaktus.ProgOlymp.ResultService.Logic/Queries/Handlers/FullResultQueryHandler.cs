@@ -67,7 +67,7 @@ internal class FullResultQueryHandler(IQueryHandler<ContestParticipantsQuery, IE
                                                                                                       arg => arg.ParticipantId,
                                                                                                       (participant, arg) => new ResultRow(participant, arg.Results.ToArray()))
                                                                                                 .OrderByDescending(row => row.TotalScore)
-                                                                                                .WithPlaces()
+                                                                                                .WithPlaces(row => row.TotalScore)
                                                                                                 .ToArray()))
                                     .ToArray());
     }
@@ -75,7 +75,7 @@ internal class FullResultQueryHandler(IQueryHandler<ContestParticipantsQuery, IE
 
 file static class MappingExtensions
 {
-    public static IEnumerable<ResultRow> WithPlaces(this IEnumerable<ResultRow> source)
+    public static IEnumerable<RankedItem<TSource>> WithPlaces<TSource>(this IEnumerable<TSource> source, Func<TSource, decimal> selector)
     {
         var previousPlace = 0;
         var place = 0;
@@ -83,23 +83,25 @@ file static class MappingExtensions
 
         foreach (var row in source)
         {
+            var currentScore = selector.Invoke(row);
+
             if (!previousScore.HasValue)
             {
                 place++;
-                previousScore = row.TotalScore;
-                yield return row.WithPlace(++previousPlace);
+                previousScore = currentScore;
+                yield return new(++previousPlace, row);
             }
-            else if (previousScore == row.TotalScore)
+            else if (previousScore == currentScore)
             {
                 place++;
-                yield return row.WithPlace(previousPlace);
+                yield return new(previousPlace, row);
             }
             else
             {
                 place++;
                 previousPlace = place;
-                previousScore = row.TotalScore;
-                yield return row.WithPlace(previousPlace);
+                previousScore = currentScore;
+                yield return new(previousPlace, row);
             }
         }
     }

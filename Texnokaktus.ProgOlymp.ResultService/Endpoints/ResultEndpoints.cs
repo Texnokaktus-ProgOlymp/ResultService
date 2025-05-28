@@ -18,7 +18,8 @@ public static class ResultEndpoints
 {
     public static IEndpointRouteBuilder MapResultEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/contests/{contestId:int}/{stage}/results");
+        var group = app.MapGroup("/contests/{contestId:int}/{stage}/results")
+                       .WithTags("Results");
 
         group.MapGet("/",
                      async Task<Results<Ok<ContestResults>, NotFound>> (int contestId, Models.ContestStage stage, IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler) =>
@@ -30,7 +31,9 @@ public static class ResultEndpoints
                                                           contestResults.ResultGroups.Select(resultGroup => resultGroup.MapResultGroup()));
 
                          return TypedResults.Ok(results);
-                     });
+                     })
+             .WithName("GetCommonStageResults")
+             .WithSummary("Get common contest stage results");
 
         group.MapGet("/personal",
                      async Task<Results<Ok<ParticipantResult>, NotFound>>(int contestId, Models.ContestStage stage, IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler, IQueryHandler<ParticipantIdQuery, int?> participantIdHandler, HttpContext context) =>
@@ -39,18 +42,20 @@ public static class ResultEndpoints
                           || await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults
                           || contestResults.ResultGroups
                                            .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
-                                           .FirstOrDefault(row => row.Row.Participant.Id == participantId) is not { } resultRow)
+                                           .FirstOrDefault(row => row.Row.Item.Participant.Id == participantId) is not { } resultRow)
                              return TypedResults.NotFound();
 
                          var result = new ParticipantResult(resultRow.Row.Place,
                                                             resultRow.Group,
                                                             contestResults.Problems.Select(problem => problem.MapProblem()),
-                                                            resultRow.Row.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
-                                                                                                      problemResult => problemResult.MapProblemResult(score => score.MapExtendedScore())),
-                                                            resultRow.Row.TotalScore);
+                                                            resultRow.Row.Item.ProblemResults.ToDictionary(problemResult => problemResult.Alias, 
+                                                                                                           problemResult => problemResult.MapProblemResult(score => score.MapExtendedScore())),
+                                                            resultRow.Row.Item.TotalScore);
 
                          return TypedResults.Ok(result);
                      })
+             .WithName("GetPersonalStageResults")
+             .WithSummary("Get personal contest stage results")
              .RequireAuthorization();
 
         return app;
@@ -64,12 +69,12 @@ file static class MappingExtensions
     public static ResultGroup MapResultGroup(this Domain.ResultGroup resultGroup) =>
         new(resultGroup.Name, resultGroup.Rows.Select(row => row.MapResultRow()));
 
-    private static ResultRow MapResultRow(this Domain.ResultRow resultRow) =>
+    private static ResultRow MapResultRow(this RankedItem<Domain.ResultRow> resultRow) =>
         new(resultRow.Place,
-            resultRow.Participant.MapParticipant(),
-            resultRow.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
-                                                  problemResult => problemResult.MapProblemResult(score => score.MapScore())),
-            resultRow.TotalScore);
+            resultRow.Item.Participant.MapParticipant(),
+            resultRow.Item.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
+                                                       problemResult => problemResult.MapProblemResult(score => score.MapScore())),
+            resultRow.Item.TotalScore);
 
     private static Score MapScore(this ResultScore resultScore) =>
         new(resultScore.BaseScore,
