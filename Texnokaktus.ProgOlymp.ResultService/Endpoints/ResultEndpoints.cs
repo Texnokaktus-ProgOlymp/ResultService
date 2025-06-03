@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Extensions;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Queries;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Models;
 using ContestResults = Texnokaktus.ProgOlymp.ResultService.Models.ContestResults;
 using ContestStage = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.ContestStage;
@@ -22,7 +21,7 @@ public static class ResultEndpoints
                        .WithTags("Results");
 
         group.MapGet("/",
-                     async Task<Results<Ok<ContestResults>, NotFound>> (int contestId, Models.ContestStage stage, IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler) =>
+                     async Task<Results<Ok<ContestResults>, NotFound>> (int contestId, Models.ContestStage stage, IFullResultQueryHandler resultQueryHandler) =>
                      {
                          if (await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults)
                              return TypedResults.NotFound();
@@ -36,7 +35,7 @@ public static class ResultEndpoints
              .WithSummary("Get common contest stage results");
 
         group.MapGet("/personal",
-                     async Task<Results<Ok<ParticipantResult>, NotFound>>(int contestId, Models.ContestStage stage, IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler, IQueryHandler<ParticipantIdQuery, int?> participantIdHandler, HttpContext context) =>
+                     async Task<Results<Ok<ParticipantResult>, NotFound>>(int contestId, Models.ContestStage stage, IFullResultQueryHandler resultQueryHandler, IParticipantIdQueryHandler participantIdHandler, HttpContext context) =>
                      {
                          if (await participantIdHandler.HandleAsync(new(contestId, context.GetUserId())) is not { } participantId
                           || await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults

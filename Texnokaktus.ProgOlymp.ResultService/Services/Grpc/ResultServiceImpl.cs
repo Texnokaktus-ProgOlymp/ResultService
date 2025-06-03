@@ -2,24 +2,25 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
 using Texnokaktus.ProgOlymp.Cqrs;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Commands;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Commands.Handlers;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Commands.Handlers.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Queries;
-using Contest = Texnokaktus.ProgOlymp.ResultService.Domain.Contest;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
 using ContestResults = Texnokaktus.ProgOlymp.ResultService.Domain.ContestResults;
 using ContestStage = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.ContestStage;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
-public class ResultServiceImpl(ICommandHandler<CreateContestCommand> createContestHandler,
-                               IQueryHandler<ContestQuery, Contest> getContestHandler,
-                               ICommandHandler<CreateProblemCommand> createProblemHandler,
-                               ICommandHandler<CreateResultCommand> createResultHandler,
-                               ICommandHandler<CreateResultAdjustmentCommand, int> createResultAdjustmentHandler,
+public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler,
+                               IContestQueryHandler getContestHandler,
+                               ICreateProblemCommandHandler createProblemHandler,
+                               ICreateResultCommandHandler createResultHandler,
+                               ICreateResultAdjustmentCommandHandler createResultAdjustmentHandler,
                                IQueryHandler<FullResultQuery, ContestResults?> resultQueryHandler)
     : Common.Contracts.Grpc.Results.ResultService.ResultServiceBase
 {
-    public override async Task<Common.Contracts.Grpc.Results.Contest> GetContest(GetContestRequest request, ServerCallContext context)
+    public override async Task<Contest> GetContest(GetContestRequest request, ServerCallContext context)
     {
         var contest = await getContestHandler.HandleAsync(new(request.ContestId, request.Stage.MapContestStage()));
 

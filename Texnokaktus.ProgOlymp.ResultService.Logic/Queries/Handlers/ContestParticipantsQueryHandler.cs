@@ -1,10 +1,11 @@
-using Texnokaktus.ProgOlymp.Cqrs;
-using Texnokaktus.ProgOlymp.ResultService.Domain;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Models;
+using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Participants;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
+using Participant = Texnokaktus.ProgOlymp.ResultService.Domain.Participant;
+using ParticipantGroup = Texnokaktus.ProgOlymp.ResultService.Logic.Models.ParticipantGroup;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers;
 
-internal class ContestParticipantsQueryHandler(Common.Contracts.Grpc.Participants.ParticipantService.ParticipantServiceClient participantServiceClient) : IQueryHandler<ContestParticipantsQuery, IEnumerable<ParticipantGroup>>
+internal class ContestParticipantsQueryHandler(ParticipantService.ParticipantServiceClient participantServiceClient) : IContestParticipantsQueryHandler
 {
     public async Task<IEnumerable<ParticipantGroup>> HandleAsync(ContestParticipantsQuery query, CancellationToken cancellationToken = default)
     {
@@ -25,6 +26,6 @@ file static class MappingExtensions
     private static Participant MapParticipant(this Common.Contracts.Grpc.Participants.Participant participant) =>
         new(participant.Id, participant.Name.MapName(), participant.Grade);
 
-    private static string MapName(this Common.Contracts.Grpc.Participants.Name name) =>
+    private static string MapName(this Name name) =>
         string.Join(" ", new[] { name.LastName, name.FirstName, name.Patronym }.Where(namePart => namePart is not null));
 }

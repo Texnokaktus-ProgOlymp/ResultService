@@ -3,10 +3,11 @@ using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Models;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers;
 
-internal class FullResultQueryHandler(IQueryHandler<ContestParticipantsQuery, IEnumerable<ParticipantGroup>> contestParticipantsQueryHandler, AppDbContext context) : IQueryHandler<FullResultQuery, ContestResults?>
+internal class FullResultQueryHandler(IQueryHandler<ContestParticipantsQuery, IEnumerable<ParticipantGroup>> contestParticipantsQueryHandler, AppDbContext context) : IFullResultQueryHandler
 {
     public async Task<ContestResults?> HandleAsync(FullResultQuery query, CancellationToken cancellationToken = default)
     {

@@ -1,11 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Logic.Commands.Handlers;
 
-public class CreateProblemCommandHandler(AppDbContext dbContext) : ICommandHandler<CreateProblemCommand>
+internal class CreateProblemCommandHandler(AppDbContext dbContext) : ICreateProblemCommandHandler
 {
     public async Task HandleAsync(CreateProblemCommand command, CancellationToken cancellationToken = default)
     {

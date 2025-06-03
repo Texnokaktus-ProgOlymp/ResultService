@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers;
 
-public class ContestQueryHandler(AppDbContext dbContext) : IQueryHandler<ContestQuery, Contest>
+internal class ContestQueryHandler(AppDbContext dbContext) : IContestQueryHandler
 {
     public async Task<Contest> HandleAsync(ContestQuery query, CancellationToken cancellationToken = default)
     {
