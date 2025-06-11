@@ -3,5 +3,5 @@ using Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
 
-public class ContestReadonlyException(int contestId, ContestStage contestStage, Exception? innerException = null)
-    : FailedPreconditionException($"The contest {contestId} {contestStage} stage is readonly", innerException);
+public class ContestReadonlyException(string contestName, ContestStage contestStage, Exception? innerException = null)
+    : FailedPreconditionException($"The contest {contestName} {contestStage} stage is readonly", innerException);

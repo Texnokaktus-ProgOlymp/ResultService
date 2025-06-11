@@ -17,7 +17,7 @@ internal class FullResultQueryHandler(IQueryHandler<ContestParticipantsQuery, IE
                                          .Include(contestResult => contestResult.Problems)
                                          .ThenInclude(problem => problem.Results)
                                          .ThenInclude(result => result.Adjustments)
-                                         .Where(contestResult => contestResult.ContestId == query.ContestId
+                                         .Where(contestResult => contestResult.ContestName == query.ContestName
                                                               && contestResult.Stage == query.Stage)
                                          .FirstOrDefaultAsync(cancellationToken);
 
@@ -53,7 +53,7 @@ internal class FullResultQueryHandler(IQueryHandler<ContestParticipantsQuery, IE
                                                                               arg.Result))
                        }).ToArray();
         
-        var participantGroups = await contestParticipantsQueryHandler.HandleAsync(new(query.ContestId), cancellationToken);
+        var participantGroups = await contestParticipantsQueryHandler.HandleAsync(new(query.ContestName), cancellationToken);
 
         return new(contestResult.Published,
                    contestResult.Problems

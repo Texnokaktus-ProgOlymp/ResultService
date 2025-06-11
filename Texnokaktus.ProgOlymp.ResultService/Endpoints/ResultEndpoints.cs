@@ -17,13 +17,13 @@ public static class ResultEndpoints
 {
     public static IEndpointRouteBuilder MapResultEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/contests/{contestId:int}/{stage}/results")
+        var group = app.MapGroup("/contests/{contestName}/{stage}/results")
                        .WithTags("Results");
 
         group.MapGet("/",
-                     async Task<Results<Ok<ContestResults>, NotFound>> (int contestId, Models.ContestStage stage, IFullResultQueryHandler resultQueryHandler) =>
+                     async Task<Results<Ok<ContestResults>, NotFound>> (string contestName, Models.ContestStage stage, IFullResultQueryHandler resultQueryHandler) =>
                      {
-                         if (await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults)
+                         if (await resultQueryHandler.HandleAsync(new(contestName, stage.MapContestStage())) is not { Published: true } contestResults)
                              return TypedResults.NotFound();
 
                          var results = new ContestResults(contestResults.Problems.Select(problem => problem.MapProblem()),
@@ -35,10 +35,10 @@ public static class ResultEndpoints
              .WithSummary("Get common contest stage results");
 
         group.MapGet("/personal",
-                     async Task<Results<Ok<ParticipantResult>, NotFound>>(int contestId, Models.ContestStage stage, IFullResultQueryHandler resultQueryHandler, IParticipantIdQueryHandler participantIdHandler, HttpContext context) =>
+                     async Task<Results<Ok<ParticipantResult>, NotFound>>(string contestName, Models.ContestStage stage, IFullResultQueryHandler resultQueryHandler, IParticipantIdQueryHandler participantIdHandler, HttpContext context) =>
                      {
-                         if (await participantIdHandler.HandleAsync(new(contestId, context.GetUserId())) is not { } participantId
-                          || await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults
+                         if (await participantIdHandler.HandleAsync(new(contestName, context.GetUserId())) is not { } participantId
+                          || await resultQueryHandler.HandleAsync(new(contestName, stage.MapContestStage())) is not { Published: true } contestResults
                           || contestResults.ResultGroups
                                            .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
                                            .FirstOrDefault(row => row.Row.Item.Participant.Id == participantId) is not { } resultRow)

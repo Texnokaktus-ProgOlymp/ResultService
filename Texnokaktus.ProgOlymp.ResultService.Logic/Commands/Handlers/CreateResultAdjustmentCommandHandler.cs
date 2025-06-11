@@ -13,19 +13,19 @@ internal class CreateResultAdjustmentCommandHandler(AppDbContext dbContext) : IC
                                            .Include(contestResult => contestResult.Problems)
                                            .ThenInclude(problem => problem.Results)
                                            .ThenInclude(problemResult => problemResult.Adjustments)
-                                           .FirstOrDefaultAsync(contestResult => contestResult.ContestId == command.ContestId
+                                           .FirstOrDefaultAsync(contestResult => contestResult.ContestName == command.ContestName
                                                                               && contestResult.Stage == command.Stage,
                                                                 cancellationToken)
-                         ?? throw new ContestNotFoundException(command.ContestId, command.Stage);
+                         ?? throw new ContestNotFoundException(command.ContestName, command.Stage);
 
         if (contestResult.Published)
-            throw new ContestReadonlyException(command.ContestId, command.Stage);
+            throw new ContestReadonlyException(command.ContestName, command.Stage);
 
         var problem = contestResult.Problems.FirstOrDefault(problem => problem.Alias == command.Alias)
-                   ?? throw new ProblemNotFoundException(command.ContestId, command.Stage, command.Alias);
+                   ?? throw new ProblemNotFoundException(command.ContestName, command.Stage, command.Alias);
 
         var result = problem.Results.FirstOrDefault(result => result.ParticipantId == command.ParticipantId)
-                  ?? throw new ResultNotFoundException(command.ContestId, command.Stage, command.Alias, command.ParticipantId);
+                  ?? throw new ResultNotFoundException(command.ContestName, command.Stage, command.Alias, command.ParticipantId);
 
         var entity = new ScoreAdjustment { Adjustment = command.Adjustment, Comment = command.Comment };
 

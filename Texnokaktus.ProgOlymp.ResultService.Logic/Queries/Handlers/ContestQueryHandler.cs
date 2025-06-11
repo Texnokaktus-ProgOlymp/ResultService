@@ -13,10 +13,10 @@ internal class ContestQueryHandler(AppDbContext dbContext) : IContestQueryHandle
         var contestResult = await dbContext.ContestResults
                                            .AsNoTracking()
                                            .Include(result => result.Problems)
-                                           .FirstOrDefaultAsync(result => result.ContestId == query.ContestId
+                                           .FirstOrDefaultAsync(result => result.ContestName == query.ContestName
                                                                        && result.Stage == query.Stage,
                                                                 cancellationToken)
-                         ?? throw new ContestNotFoundException(query.ContestId, query.Stage);
+                         ?? throw new ContestNotFoundException(query.ContestName, query.Stage);
 
         return new(contestResult.Id,
                    contestResult.Stage,

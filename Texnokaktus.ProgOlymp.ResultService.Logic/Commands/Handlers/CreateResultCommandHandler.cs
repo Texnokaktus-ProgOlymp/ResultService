@@ -11,19 +11,19 @@ internal class CreateResultCommandHandler(AppDbContext dbContext) : ICreateResul
         var contestResult = await dbContext.ContestResults
                                            .Include(contestResult => contestResult.Problems)
                                            .ThenInclude(problem => problem.Results)
-                                           .FirstOrDefaultAsync(contestResult => contestResult.ContestId == command.ContestId
+                                           .FirstOrDefaultAsync(contestResult => contestResult.ContestName == command.ContestName
                                                                               && contestResult.Stage == command.Stage,
                                                                 cancellationToken)
-                         ?? throw new ContestNotFoundException(command.ContestId, command.Stage);
+                         ?? throw new ContestNotFoundException(command.ContestName, command.Stage);
 
         if (contestResult.Published)
-            throw new ContestReadonlyException(command.ContestId, command.Stage);
+            throw new ContestReadonlyException(command.ContestName, command.Stage);
 
         var problem = contestResult.Problems.FirstOrDefault(problem => problem.Alias == command.Alias)
-                   ?? throw new ProblemNotFoundException(command.ContestId, command.Stage, command.Alias);
+                   ?? throw new ProblemNotFoundException(command.ContestName, command.Stage, command.Alias);
 
         if (problem.Results.Any(result => result.ParticipantId == command.ParticipantId))
-            throw new ResultAlreadyExistsException(command.ContestId, command.Stage, command.Alias, command.ParticipantId);
+            throw new ResultAlreadyExistsException(command.ContestName, command.Stage, command.Alias, command.ParticipantId);
 
         problem.Results.Add(new()
         {

@@ -11,7 +11,7 @@ internal class ContestParticipantsQueryHandler(ParticipantService.ParticipantSer
     {
         var response = await participantServiceClient.GetContestParticipantsAsync(new()
                                                                                   {
-                                                                                      ContestId = query.ContestId
+                                                                                      ContestName = query.ContestName
                                                                                   },
                                                                                   cancellationToken: cancellationToken);
         return response.ParticipantGroups.Select(group => group.MapParticipantGroup());

@@ -22,7 +22,7 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
 {
     public override async Task<Contest> GetContest(GetContestRequest request, ServerCallContext context)
     {
-        var contest = await getContestHandler.HandleAsync(new(request.ContestId, request.Stage.MapContestStage()));
+        var contest = await getContestHandler.HandleAsync(new(request.ContestName, request.Stage.MapContestStage()));
 
         return new()
         {
@@ -43,14 +43,14 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
 
     public override async Task<Empty> AddContest(AddContestRequest request, ServerCallContext context)
     {
-        await createContestHandler.HandleAsync(new(request.Id, request.Stage.MapContestStage(), request.StageId), context.CancellationToken);
+        await createContestHandler.HandleAsync(new(request.ContestName, request.Stage.MapContestStage(), request.StageId), context.CancellationToken);
 
         return new();
     }
 
     public override async Task<Empty> AddProblem(AddProblemRequest request, ServerCallContext context)
     {
-        await createProblemHandler.HandleAsync(new(request.ContestId, request.Stage.MapContestStage(), request.Alias, request.Name), context.CancellationToken);
+        await createProblemHandler.HandleAsync(new(request.ContestName, request.Stage.MapContestStage(), request.Alias, request.Name), context.CancellationToken);
 
         return new();
     }
@@ -59,8 +59,8 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
     {
         var stage = request.Stage.MapContestStage();
 
-        var contestResults = await resultQueryHandler.HandleAsync(new(request.ContestId, stage), context.CancellationToken)
-                          ?? throw new ContestNotFoundException(request.ContestId, stage);
+        var contestResults = await resultQueryHandler.HandleAsync(new(request.ContestName, stage), context.CancellationToken)
+                          ?? throw new ContestNotFoundException(request.ContestName, stage);
 
         return new()
         {
@@ -109,13 +109,13 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
     {
         var stage = request.Stage.MapContestStage();
 
-        var contestResults = await resultQueryHandler.HandleAsync(new(request.ContestId, stage), context.CancellationToken)
-                          ?? throw new ContestNotFoundException(request.ContestId, stage);
+        var contestResults = await resultQueryHandler.HandleAsync(new(request.ContestName, stage), context.CancellationToken)
+                          ?? throw new ContestNotFoundException(request.ContestName, stage);
 
         if (contestResults.ResultGroups
                           .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
                           .FirstOrDefault(row => row.Row.Item.Participant.Id == request.ParticipantId) is not { } resultRow)
-            throw new ParticipantResultsNotFoundException(request.ContestId, stage, request.ParticipantId);
+            throw new ParticipantResultsNotFoundException(request.ContestName, stage, request.ParticipantId);
 
         return new()
         {
@@ -148,14 +148,14 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
 
     public override async Task<Empty> AddResult(AddResultRequest request, ServerCallContext context)
     {
-        await createResultHandler.HandleAsync(new(request.ContestId, request.Stage.MapContestStage(), request.Alias, request.ParticipantId, request.BaseScore), context.CancellationToken);
+        await createResultHandler.HandleAsync(new(request.ContestName, request.Stage.MapContestStage(), request.Alias, request.ParticipantId, request.BaseScore), context.CancellationToken);
 
         return new();
     }
 
     public override async Task<AddResultAdjustmentResponse> AddResultAdjustment(AddResultAdjustmentRequest request, ServerCallContext context)
     {
-        var id = await createResultAdjustmentHandler.HandleAsync(new(request.ContestId, request.Stage.MapContestStage(), request.Alias, request.ParticipantId, request.Adjustment, request.Comment), context.CancellationToken);
+        var id = await createResultAdjustmentHandler.HandleAsync(new(request.ContestName, request.Stage.MapContestStage(), request.Alias, request.ParticipantId, request.Adjustment, request.Comment), context.CancellationToken);
 
         return new()
         {

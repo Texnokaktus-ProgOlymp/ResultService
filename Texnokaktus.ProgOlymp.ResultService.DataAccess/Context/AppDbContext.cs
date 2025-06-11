@@ -17,7 +17,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         {
             builder.HasKey(contestResult => contestResult.Id);
 
-            builder.HasAlternateKey(result => new { result.ContestId, result.Stage });
+            builder.HasAlternateKey(result => new { result.ContestName, result.Stage });
             builder.HasAlternateKey(result => result.StageId);
 
             builder.HasMany(contestResult => contestResult.Problems)

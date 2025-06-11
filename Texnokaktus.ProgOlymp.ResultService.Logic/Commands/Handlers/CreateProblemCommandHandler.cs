@@ -10,16 +10,16 @@ internal class CreateProblemCommandHandler(AppDbContext dbContext) : ICreateProb
     {
         var contestResult = await dbContext.ContestResults
                                            .Include(result => result.Problems)
-                                           .FirstOrDefaultAsync(result => result.ContestId == command.ContestId
+                                           .FirstOrDefaultAsync(result => result.ContestName == command.ContestName
                                                                        && result.Stage == command.Stage,
                                                                 cancellationToken)
-                         ?? throw new ContestNotFoundException(command.ContestId, command.Stage);
+                         ?? throw new ContestNotFoundException(command.ContestName, command.Stage);
 
         if (contestResult.Published)
-            throw new ContestReadonlyException(command.ContestId, command.Stage);
+            throw new ContestReadonlyException(command.ContestName, command.Stage);
 
         if (contestResult.Problems.Any(problem => problem.Alias == command.Alias))
-            throw new ProblemAlreadyExistsException(command.ContestId, command.Stage, command.Alias);
+            throw new ProblemAlreadyExistsException(command.ContestName, command.Stage, command.Alias);
 
         contestResult.Problems.Add(new()
         {

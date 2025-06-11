@@ -3,8 +3,8 @@ using Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
 
-public class ProblemAlreadyExistsException(int contestId,
+public class ProblemAlreadyExistsException(string contestName,
                                            ContestStage contestStage,
                                            string alias,
                                            Exception? innerException = null)
-    : AlreadyExistsException($"The contest {contestId} {contestStage} stage already has problem {alias}", innerException);
+    : AlreadyExistsException($"The contest {contestName} {contestStage} stage already has problem {alias}", innerException);

@@ -9,10 +9,10 @@ internal class CreateContestCommandHandler(AppDbContext dbContext) : ICreateCont
 {
     public async Task HandleAsync(CreateContestCommand command, CancellationToken cancellationToken = default)
     {
-        if (await dbContext.ContestResults.AnyAsync(contestResult => contestResult.ContestId == command.ContestId
+        if (await dbContext.ContestResults.AnyAsync(contestResult => contestResult.ContestName == command.ContestName
                                                                   && contestResult.Stage == command.Stage,
                                                     cancellationToken))
-            throw new ContestAlreadyExistsException(command.ContestId, command.Stage);
+            throw new ContestAlreadyExistsException(command.ContestName, command.Stage);
 
         if (await dbContext.ContestResults.AnyAsync(result => result.StageId == command.StageId,
                                                     cancellationToken))
@@ -20,7 +20,7 @@ internal class CreateContestCommandHandler(AppDbContext dbContext) : ICreateCont
 
         dbContext.ContestResults.Add(new()
         {
-            ContestId = command.ContestId,
+            ContestName = command.ContestName,
             Stage = command.Stage,
             StageId = command.StageId
         });
