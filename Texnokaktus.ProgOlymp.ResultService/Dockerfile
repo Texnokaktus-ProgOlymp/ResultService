@@ -13,6 +13,7 @@ ARG TARGETARCH
 WORKDIR /src
 COPY ["Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj", "Texnokaktus.ProgOlymp.ResultService/"]
 COPY ["modules/Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts.csproj", "modules/Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts/"]
+COPY ["Texnokaktus.ProgOlymp.Cqrs/Texnokaktus.ProgOlymp.Cqrs.csproj", "Texnokaktus.ProgOlymp.Cqrs/"]
 COPY ["Texnokaktus.ProgOlymp.ResultService.DataAccess/Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj", "Texnokaktus.ProgOlymp.ResultService.DataAccess/"]
 COPY ["Texnokaktus.ProgOlymp.ResultService.Domain/Texnokaktus.ProgOlymp.ResultService.Domain.csproj", "Texnokaktus.ProgOlymp.ResultService.Domain/"]
 COPY ["Texnokaktus.ProgOlymp.ResultService.Infrastructure/Texnokaktus.ProgOlymp.ResultService.Infrastructure.csproj", "Texnokaktus.ProgOlymp.ResultService.Infrastructure/"]
