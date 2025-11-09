@@ -4,10 +4,12 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 ARG GHPAT
 ARG VERSION
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /src
 COPY ["Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj", "Texnokaktus.ProgOlymp.ResultService/"]
 COPY ["modules/Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts.csproj", "modules/Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts/"]
@@ -16,7 +18,7 @@ COPY ["Texnokaktus.ProgOlymp.ResultService.Domain/Texnokaktus.ProgOlymp.ResultSe
 COPY ["Texnokaktus.ProgOlymp.ResultService.Infrastructure/Texnokaktus.ProgOlymp.ResultService.Infrastructure.csproj", "Texnokaktus.ProgOlymp.ResultService.Infrastructure/"]
 COPY ["Texnokaktus.ProgOlymp.ResultService.Logic/Texnokaktus.ProgOlymp.ResultService.Logic.csproj", "Texnokaktus.ProgOlymp.ResultService.Logic/"]
 RUN dotnet nuget add source --username kav128 --password $GHPAT --store-password-in-clear-text --name "GitHub Texnokaktus-Progolymp" https://nuget.pkg.github.com/Texnokaktus-ProgOlymp/index.json
-RUN dotnet restore "Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj"
+RUN dotnet restore "Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj" --runtime $TARGETOS-$TARGETARCH
 COPY . .
 WORKDIR "/src/Texnokaktus.ProgOlymp.ResultService"
 RUN dotnet build "./Texnokaktus.ProgOlymp.ResultService.csproj" -c $BUILD_CONFIGURATION -o /app/build

@@ -84,6 +84,7 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64,linux/arm64
           context: .
           build-args: |
             GHPAT=${{ secrets.GITHUB_TOKEN }}
@@ -97,7 +98,8 @@ jobs:
     
     needs: docker
     runs-on: cttit
-    if: github.ref == 'refs/heads/master'
+    # if: github.ref == 'refs/heads/master'
+    if: false
     
     env:
       IMAGE: ${{ needs.docker.outputs.name }}
