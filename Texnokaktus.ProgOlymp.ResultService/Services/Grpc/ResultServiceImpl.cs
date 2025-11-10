@@ -1,13 +1,9 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
-using Texnokaktus.ProgOlymp.Cqrs;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Commands.Handlers;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Commands.Handlers.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Queries;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
-using ContestResults = Texnokaktus.ProgOlymp.ResultService.Domain.ContestResults;
 using ContestStage = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.ContestStage;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
@@ -17,7 +13,7 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
                                ICreateProblemCommandHandler createProblemHandler,
                                ICreateResultCommandHandler createResultHandler,
                                ICreateResultAdjustmentCommandHandler createResultAdjustmentHandler,
-                               IQueryHandler<FullResultQuery, ContestResults?> resultQueryHandler)
+                               IFullResultQueryHandler resultQueryHandler)
     : Common.Contracts.Grpc.Results.ResultService.ResultServiceBase
 {
     public override async Task<Contest> GetContest(GetContestRequest request, ServerCallContext context)
@@ -55,7 +51,7 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
         return new();
     }
 
-    public override async Task<Common.Contracts.Grpc.Results.ContestResults> GetResults(GetResultsRequest request, ServerCallContext context)
+    public override async Task<ContestResults> GetResults(GetResultsRequest request, ServerCallContext context)
     {
         var stage = request.Stage.MapContestStage();
 
