@@ -55,8 +55,6 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-app.UseOpenTelemetryPrometheusScrapingEndpoint();
-
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
