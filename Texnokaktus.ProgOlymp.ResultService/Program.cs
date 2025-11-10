@@ -14,6 +14,8 @@ using Texnokaktus.ProgOlymp.ResultService.Infrastructure;
 using Texnokaktus.ProgOlymp.ResultService.Logic;
 using Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
+const string serviceName = "ResultService";
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
@@ -38,9 +40,9 @@ builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.C
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
 
-builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
-
-builder.Services.AddTexnokaktusOpenTelemetry(builder.Configuration, "ResultService", null, null);
+builder.Services.AddTexnokaktusOpenTelemetry(serviceName, null, null);
+builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration)
+                                                                 .AddOpenTelemetrySupport(serviceName));
 
 builder.Services
        .AddAuthentication(options =>
