@@ -81,7 +81,7 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
                                        resultGroup.Rows
                                                   .Select(resultRow => new ResultRow
                                                    {
-                                                       Place = resultRow.Place,
+                                                       Place = resultRow.Rank,
                                                        ParticipantId = resultRow.Item.Participant.Id,
                                                        Results =
                                                        {
@@ -115,7 +115,7 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
 
         return new()
         {
-            Place = resultRow.Row.Place,
+            Place = resultRow.Row.Rank,
             ResultGroupName = resultRow.Group,
             Problems =
             {

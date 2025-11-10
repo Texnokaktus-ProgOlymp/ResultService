@@ -44,7 +44,7 @@ public static class ResultEndpoints
                                            .FirstOrDefault(row => row.Row.Item.Participant.Id == participantId) is not { } resultRow)
                              return TypedResults.NotFound();
 
-                         var result = new ParticipantResult(resultRow.Row.Place,
+                         var result = new ParticipantResult(resultRow.Row.Rank,
                                                             resultRow.Group,
                                                             contestResults.Problems.Select(problem => problem.MapProblem()),
                                                             resultRow.Row.Item.ProblemResults.ToDictionary(problemResult => problemResult.Alias, 
@@ -69,7 +69,7 @@ file static class MappingExtensions
         new(resultGroup.Name, resultGroup.Rows.Select(row => row.MapResultRow()));
 
     private static ResultRow MapResultRow(this RankedItem<Domain.ResultRow> resultRow) =>
-        new(resultRow.Place,
+        new(resultRow.Rank,
             resultRow.Item.Participant.MapParticipant(),
             resultRow.Item.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
                                                        problemResult => problemResult.MapProblemResult(score => score.MapScore())),

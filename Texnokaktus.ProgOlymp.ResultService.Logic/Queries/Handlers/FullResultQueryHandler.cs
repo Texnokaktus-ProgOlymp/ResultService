@@ -50,7 +50,7 @@ internal class FullResultQueryHandler(IContestParticipantsQueryHandler contestPa
                                                                               arg.ProblemAlias,
                                                                               arg.Result))
                        }).ToArray();
-        
+
         var participantGroups = await contestParticipantsQueryHandler.HandleAsync(new(query.ContestName), cancellationToken);
 
         return new(contestResult.Published,
@@ -66,7 +66,7 @@ internal class FullResultQueryHandler(IContestParticipantsQueryHandler contestPa
                                                                                                       arg => arg.ParticipantId,
                                                                                                       (participant, arg) => new ResultRow(participant, arg.Results.ToArray()))
                                                                                                 .OrderByDescending(row => row.TotalScore)
-                                                                                                .WithPlaces(row => row.TotalScore)
+                                                                                                .Rank(row => row.TotalScore)
                                                                                                 .ToArray()))
                                     .ToArray());
     }
@@ -74,7 +74,7 @@ internal class FullResultQueryHandler(IContestParticipantsQueryHandler contestPa
 
 file static class MappingExtensions
 {
-    public static IEnumerable<RankedItem<TSource>> WithPlaces<TSource>(this IEnumerable<TSource> source, Func<TSource, decimal> selector)
+    public static IEnumerable<RankedItem<TSource>> Rank<TSource>(this IEnumerable<TSource> source, Func<TSource, decimal> selector)
     {
         var previousPlace = 0;
         var place = 0;
@@ -84,24 +84,15 @@ file static class MappingExtensions
         {
             var currentScore = selector.Invoke(row);
 
+            place++;
             if (!previousScore.HasValue)
-            {
-                place++;
-                previousScore = currentScore;
-                yield return new(++previousPlace, row);
-            }
-            else if (previousScore == currentScore)
-            {
-                place++;
-                yield return new(previousPlace, row);
-            }
-            else
-            {
-                place++;
+                previousPlace++;
+            else if (previousScore != currentScore)
                 previousPlace = place;
-                previousScore = currentScore;
-                yield return new(previousPlace, row);
-            }
+
+            previousScore = currentScore;
+
+            yield return new(previousPlace, row);
         }
     }
 }
