@@ -12,15 +12,15 @@ internal class FullResultQueryHandler(IContestParticipantsQueryHandler contestPa
         var contestResult = await context.ContestResults
                                          .AsNoTracking()
                                          .AsSplitQuery()
-                                         .Include(contestResult => contestResult.Problems)
+                                         .Include(contestResult => contestResult.Problems.OrderBy(problem => problem.Alias))
                                          .ThenInclude(problem => problem.Results)
                                          .ThenInclude(result => result.Adjustments)
-                                         .Where(contestResult => contestResult.ContestName == query.ContestName
-                                                              && contestResult.Stage == query.Stage)
-                                         .FirstOrDefaultAsync(cancellationToken);
+                                         .FirstOrDefaultAsync(contestResult => contestResult.ContestName == query.ContestName
+                                                                            && contestResult.Stage == query.Stage,
+                                                              cancellationToken);
 
         if (contestResult is null) return null;
-        
+
         var results = (from problem in contestResult.Problems
                        from participantId in contestResult.Problems
                                                           .SelectMany(p => p.Results.Select(problemResult => problemResult.ParticipantId))
