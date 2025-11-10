@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
+using Texnokaktus.ProgOlymp.ResultService.Logic.Commands.Handlers.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Logic.Commands.Handlers;
