@@ -1,33 +1,36 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Commands.Handlers.Abstractions;
+using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
 using ContestStage = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.ContestStage;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
-public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler,
-                               IContestQueryHandler getContestHandler,
-                               ICreateProblemCommandHandler createProblemHandler,
-                               ICreateResultCommandHandler createResultHandler,
-                               ICreateResultAdjustmentCommandHandler createResultAdjustmentHandler,
-                               IFullResultQueryHandler resultQueryHandler)
-    : Common.Contracts.Grpc.Results.ResultService.ResultServiceBase
+public class ResultServiceImpl(AppDbContext dbContext, IFullResultQueryHandler resultQueryHandler) : Common.Contracts.Grpc.Results.ResultService.ResultServiceBase
 {
     public override async Task<Contest> GetContest(GetContestRequest request, ServerCallContext context)
     {
-        var contest = await getContestHandler.HandleAsync(new(request.ContestName, request.Stage.MapContestStage()));
+        var contestStage = request.Stage.MapContestStage();
+
+        var contestResult = await dbContext.ContestResults
+                                           .AsNoTracking()
+                                           .Include(result => result.Problems)
+                                           .FirstOrDefaultAsync(result => result.ContestName == request.ContestName
+                                                                       && result.Stage == contestStage,
+                                                                context.CancellationToken)
+                         ?? throw new ContestNotFoundException(request.ContestName, contestStage);
 
         return new()
         {
-            Id = contest.Id,
-            Stage = contest.Stage.MapContestStage(),
-            StageId = contest.StageId,
+            Id = contestResult.Id,
+            Stage = contestResult.Stage.MapContestStage(),
+            StageId = contestResult.StageId,
             Problems =
             {
-                contest.Problems.Select(problem => new Problem
+                contestResult.Problems.Select(problem => new Problem
                 {
                     Id = problem.Id,
                     Alias = problem.Alias,
@@ -39,14 +42,53 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
 
     public override async Task<Empty> AddContest(AddContestRequest request, ServerCallContext context)
     {
-        await createContestHandler.HandleAsync(new(request.ContestName, request.Stage.MapContestStage(), request.StageId), context.CancellationToken);
+        var contestStage = request.Stage.MapContestStage();
+
+        if (await dbContext.ContestResults.AnyAsync(contestResult => contestResult.ContestName == request.ContestName
+                                                                  && contestResult.Stage == contestStage,
+                                                    context.CancellationToken))
+            throw new ContestAlreadyExistsException(request.ContestName, contestStage);
+
+        if (await dbContext.ContestResults.AnyAsync(result => result.StageId == request.StageId,
+                                                    context.CancellationToken))
+            throw new ContestAlreadyExistsException(request.StageId);
+
+        dbContext.ContestResults.Add(new()
+        {
+            ContestName = request.ContestName,
+            Stage = contestStage,
+            StageId = request.StageId
+        });
+
+        await dbContext.SaveChangesAsync(context.CancellationToken);
 
         return new();
     }
 
     public override async Task<Empty> AddProblem(AddProblemRequest request, ServerCallContext context)
     {
-        await createProblemHandler.HandleAsync(new(request.ContestName, request.Stage.MapContestStage(), request.Alias, request.Name), context.CancellationToken);
+        var contestStage = request.Stage.MapContestStage();
+
+        var contestResult = await dbContext.ContestResults
+                                           .Include(result => result.Problems.Where(problem => problem.Alias == request.Alias))
+                                           .FirstOrDefaultAsync(result => result.ContestName == request.ContestName
+                                                                       && result.Stage == contestStage,
+                                                                context.CancellationToken)
+                         ?? throw new ContestNotFoundException(request.ContestName, contestStage);
+
+        if (contestResult.Published)
+            throw new ContestReadonlyException(request.ContestName, contestStage);
+
+        if (contestResult.Problems.Count != 0)
+            throw new ProblemAlreadyExistsException(request.ContestName, contestStage, request.Alias);
+
+        contestResult.Problems.Add(new()
+        {
+            Alias = request.Alias,
+            Name = request.Name
+        });
+
+        await dbContext.SaveChangesAsync(context.CancellationToken);
 
         return new();
     }
@@ -144,18 +186,70 @@ public class ResultServiceImpl(ICreateContestCommandHandler createContestHandler
 
     public override async Task<Empty> AddResult(AddResultRequest request, ServerCallContext context)
     {
-        await createResultHandler.HandleAsync(new(request.ContestName, request.Stage.MapContestStage(), request.Alias, request.ParticipantId, request.BaseScore), context.CancellationToken);
+        var contestStage = request.Stage.MapContestStage();
+
+        var contestResult = await dbContext.ContestResults
+                                           .Include(contestResult => contestResult.Problems.Where(problem => problem.Alias == request.Alias))
+                                           .ThenInclude(problem => problem.Results.Select(result => result.ParticipantId == request.ParticipantId))
+                                           .FirstOrDefaultAsync(contestResult => contestResult.ContestName == request.ContestName
+                                                                              && contestResult.Stage == contestStage,
+                                                                context.CancellationToken)
+                         ?? throw new ContestNotFoundException(request.ContestName, contestStage);
+
+        if (contestResult.Published)
+            throw new ContestReadonlyException(request.ContestName, contestStage);
+
+        var problem = contestResult.Problems.FirstOrDefault()
+                   ?? throw new ProblemNotFoundException(request.ContestName, contestStage, request.Alias);
+
+        if (problem.Results.Count != 0)
+            throw new ResultAlreadyExistsException(request.ContestName, contestStage, request.Alias, request.ParticipantId);
+
+        problem.Results.Add(new()
+        {
+            ParticipantId = request.ParticipantId,
+            BaseScore = request.BaseScore
+        });
+
+        await dbContext.SaveChangesAsync(context.CancellationToken);
 
         return new();
     }
 
     public override async Task<AddResultAdjustmentResponse> AddResultAdjustment(AddResultAdjustmentRequest request, ServerCallContext context)
     {
-        var id = await createResultAdjustmentHandler.HandleAsync(new(request.ContestName, request.Stage.MapContestStage(), request.Alias, request.ParticipantId, request.Adjustment, request.Comment), context.CancellationToken);
+        var contestStage = request.Stage.MapContestStage();
+
+        var contestResult = await dbContext.ContestResults
+                                        .Include(contestResult => contestResult.Problems.Where(problem => problem.Alias == request.Alias))
+                                        .ThenInclude(problem => problem.Results.Where(result => result.ParticipantId == request.ParticipantId))
+                                        .FirstOrDefaultAsync(contestResult => contestResult.ContestName == request.ContestName
+                                                                           && contestResult.Stage == contestStage,
+                                                             context.CancellationToken)
+                      ?? throw new ContestNotFoundException(request.ContestName, contestStage);
+
+        if (contestResult.Published)
+            throw new ContestReadonlyException(request.ContestName, contestStage);
+
+        var problem = contestResult.Problems.FirstOrDefault()
+                   ?? throw new ProblemNotFoundException(request.ContestName, contestStage, request.Alias);
+
+        var result = problem.Results.FirstOrDefault()
+                  ?? throw new ResultNotFoundException(request.ContestName, contestStage, request.Alias, request.ParticipantId);
+
+        var entity = new DataAccess.Entities.ScoreAdjustment
+        {
+            Adjustment = request.Adjustment,
+            Comment = request.Comment
+        };
+
+        result.Adjustments.Add(entity);
+
+        await dbContext.SaveChangesAsync(context.CancellationToken);
 
         return new()
         {
-            Id = id
+            Id = entity.Id
         };
     }
 }

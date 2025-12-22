@@ -9,7 +9,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<ContestResult> ContestResults { get; set; }
     public DbSet<Problem> Problems { get; set; }
     public DbSet<ProblemResult> ProblemResults { get; set; }
-    public DbSet<ScoreAdjustment> ScoreAdjustments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,16 +43,14 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
 
             builder.Property(result => result.BaseScore).HasScorePrecision();
 
-            builder.HasMany(problemResult => problemResult.Adjustments)
-                   .WithOne()
-                   .HasForeignKey(scoreAdjustment => scoreAdjustment.ProblemResultId);
-        });
+            builder.OwnsMany<ScoreAdjustment>(result => result.Adjustments,
+                                              navigationBuilder =>
+                                              {
+                                                  navigationBuilder.HasKey(adjustment => adjustment.Id);
 
-        modelBuilder.Entity<ScoreAdjustment>(builder =>
-        {
-            builder.HasKey(scoreAdjustment => scoreAdjustment.Id);
-
-            builder.Property(adjustment => adjustment.Adjustment).HasScorePrecision();
+                                                  navigationBuilder.Property(adjustment => adjustment.Adjustment)
+                                                                   .HasScorePrecision();
+                                              });
         });
 
         base.OnModelCreating(modelBuilder);

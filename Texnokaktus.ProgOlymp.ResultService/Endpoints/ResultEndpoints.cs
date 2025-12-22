@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Extensions;
+using Texnokaktus.ProgOlymp.ResultService.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Models;
 using ContestResults = Texnokaktus.ProgOlymp.ResultService.Models.ContestResults;
@@ -35,9 +36,9 @@ public static class ResultEndpoints
              .WithSummary("Get common contest stage results");
 
         group.MapGet("/personal",
-                     async Task<Results<Ok<ParticipantResult>, NotFound>>(string contestName, Models.ContestStage stage, IFullResultQueryHandler resultQueryHandler, IParticipantIdQueryHandler participantIdHandler, HttpContext context) =>
+                     async Task<Results<Ok<ParticipantResult>, NotFound>>(string contestName, Models.ContestStage stage, IFullResultQueryHandler resultQueryHandler, IParticipantServiceClient participantServiceClient, HttpContext context) =>
                      {
-                         if (await participantIdHandler.HandleAsync(new(contestName, context.GetUserId())) is not { } participantId
+                         if (await participantServiceClient.GetParticipantIdAsync(contestName, context.GetUserId()) is not { } participantId
                           || await resultQueryHandler.HandleAsync(new(contestName, stage.MapContestStage())) is not { Published: true } contestResults
                           || contestResults.ResultGroups
                                            .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
