@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Participants;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers;
 
-internal class FullResultQueryHandler(IContestParticipantsQueryHandler contestParticipantsQueryHandler, AppDbContext context) : IFullResultQueryHandler
+internal class FullResultQueryHandler(AppDbContext context, ParticipantService.ParticipantServiceClient participantServiceClient) : IFullResultQueryHandler
 {
     public async Task<ContestResults?> HandleAsync(FullResultQuery query, CancellationToken cancellationToken = default)
     {
@@ -14,7 +15,6 @@ internal class FullResultQueryHandler(IContestParticipantsQueryHandler contestPa
                                          .AsSplitQuery()
                                          .Include(contestResult => contestResult.Problems.OrderBy(problem => problem.Alias))
                                          .ThenInclude(problem => problem.Results)
-                                         .ThenInclude(result => result.Adjustments)
                                          .FirstOrDefaultAsync(contestResult => contestResult.ContestName == query.ContestName
                                                                             && contestResult.Stage == query.Stage,
                                                               cancellationToken);
@@ -51,7 +51,11 @@ internal class FullResultQueryHandler(IContestParticipantsQueryHandler contestPa
                                                                               arg.Result))
                        }).ToArray();
 
-        var participantGroups = await contestParticipantsQueryHandler.HandleAsync(new(query.ContestName), cancellationToken);
+        var participantsResponse = await participantServiceClient.GetContestParticipantsAsync(new()
+                                                                                              {
+                                                                                                  ContestName = query.ContestName
+                                                                                              },
+                                                                                              cancellationToken: cancellationToken);
 
         return new(contestResult.Published,
                    contestResult.Problems
@@ -59,16 +63,17 @@ internal class FullResultQueryHandler(IContestParticipantsQueryHandler contestPa
                                                                problem.Alias,
                                                                problem.Name))
                                 .ToArray(),
-                   participantGroups.Select(participantGroup => new ResultGroup(participantGroup.Name,
-                                                                                participantGroup.Participants
-                                                                                                .Join(results,
-                                                                                                      participant => participant.Id,
-                                                                                                      arg => arg.ParticipantId,
-                                                                                                      (participant, arg) => new ResultRow(participant, arg.Results.ToArray()))
-                                                                                                .OrderByDescending(row => row.TotalScore)
-                                                                                                .Rank(row => row.TotalScore)
-                                                                                                .ToArray()))
-                                    .ToArray());
+                   participantsResponse.ParticipantGroups
+                                       .Select(participantGroup => new ResultGroup(participantGroup.Name,
+                                                                                   participantGroup.Participants
+                                                                                                   .Join(results,
+                                                                                                         participant => participant.Id,
+                                                                                                         arg => arg.ParticipantId,
+                                                                                                         (participant, arg) => new ResultRow(participant.MapParticipant(), arg.Results.ToArray()))
+                                                                                                   .OrderByDescending(row => row.TotalScore)
+                                                                                                   .Rank(row => row.TotalScore)
+                                                                                                   .ToArray()))
+                                       .ToArray());
     }
 }
 
@@ -95,4 +100,10 @@ file static class MappingExtensions
             yield return new(previousPlace, row);
         }
     }
+
+    public static Domain.Participant MapParticipant(this Common.Contracts.Grpc.Participants.Participant participant) =>
+        new(participant.Id, participant.Name.MapName(), participant.Grade);
+
+    private static string MapName(this Name name) =>
+        string.Join(" ", new[] { name.LastName, name.FirstName, name.Patronym }.Where(namePart => namePart is not null));
 }

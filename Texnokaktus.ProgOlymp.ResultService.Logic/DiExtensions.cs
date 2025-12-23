@@ -7,6 +7,5 @@ namespace Texnokaktus.ProgOlymp.ResultService.Logic;
 public static class DiExtensions
 {
     public static IServiceCollection AddLogicServices(this IServiceCollection services) =>
-        services.AddScoped<IContestParticipantsQueryHandler, ContestParticipantsQueryHandler>()
-                .AddScoped<IFullResultQueryHandler, FullResultQueryHandler>();
+        services.AddScoped<IFullResultQueryHandler, FullResultQueryHandler>();
 }
