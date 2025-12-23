@@ -1,22 +1,26 @@
 using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Participants;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
+using Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
+using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
+using Problem = Texnokaktus.ProgOlymp.ResultService.Domain.Problem;
+using ProblemResult = Texnokaktus.ProgOlymp.ResultService.Domain.ProblemResult;
+using ScoreAdjustment = Texnokaktus.ProgOlymp.ResultService.Domain.ScoreAdjustment;
 
-namespace Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers;
+namespace Texnokaktus.ProgOlymp.ResultService.Services;
 
-internal class FullResultQueryHandler(AppDbContext context, ParticipantService.ParticipantServiceClient participantServiceClient) : IFullResultQueryHandler
+public class ResultService(AppDbContext context, ParticipantService.ParticipantServiceClient participantServiceClient) : IResultService
 {
-    public async Task<ContestResults?> HandleAsync(FullResultQuery query, CancellationToken cancellationToken = default)
+    public async Task<ContestResults?> GetResultsAsync(string contestName, ContestStage stage, CancellationToken cancellationToken)
     {
         var contestResult = await context.ContestResults
                                          .AsNoTracking()
                                          .AsSplitQuery()
                                          .Include(contestResult => contestResult.Problems.OrderBy(problem => problem.Alias))
                                          .ThenInclude(problem => problem.Results)
-                                         .FirstOrDefaultAsync(contestResult => contestResult.ContestName == query.ContestName
-                                                                            && contestResult.Stage == query.Stage,
+                                         .FirstOrDefaultAsync(contestResult => contestResult.ContestName == contestName
+                                                                            && contestResult.Stage == stage,
                                                               cancellationToken);
 
         if (contestResult is null) return null;
@@ -62,7 +66,7 @@ internal class FullResultQueryHandler(AppDbContext context, ParticipantService.P
 
         var participantsResponse = await participantServiceClient.GetContestParticipantsAsync(new()
                                                                                               {
-                                                                                                  ContestName = query.ContestName
+                                                                                                  ContestName = contestName
                                                                                               },
                                                                                               cancellationToken: cancellationToken);
 

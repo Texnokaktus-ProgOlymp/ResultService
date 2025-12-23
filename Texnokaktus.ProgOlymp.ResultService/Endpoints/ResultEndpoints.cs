@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Extensions;
 using Texnokaktus.ProgOlymp.ResultService.Infrastructure.Clients.Abstractions;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Models;
+using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 using ContestResults = Texnokaktus.ProgOlymp.ResultService.Models.ContestResults;
 using ContestStage = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.ContestStage;
 using Participant = Texnokaktus.ProgOlymp.ResultService.Models.Participant;
@@ -22,9 +22,9 @@ public static class ResultEndpoints
                        .WithTags("Results");
 
         group.MapGet("/",
-                     async Task<Results<Ok<ContestResults>, NotFound>> (string contestName, Models.ContestStage stage, IFullResultQueryHandler resultQueryHandler) =>
+                     async Task<Results<Ok<ContestResults>, NotFound>> (string contestName, Models.ContestStage stage, IResultService resultService, CancellationToken cancellationToken) =>
                      {
-                         if (await resultQueryHandler.HandleAsync(new(contestName, stage.MapContestStage())) is not { Published: true } contestResults)
+                         if (await resultService.GetResultsAsync(contestName, stage.MapContestStage(), cancellationToken) is not { Published: true } contestResults)
                              return TypedResults.NotFound();
 
                          var results = new ContestResults(contestResults.Problems.Select(problem => problem.MapProblem()),
@@ -36,10 +36,10 @@ public static class ResultEndpoints
              .WithSummary("Get common contest stage results");
 
         group.MapGet("/personal",
-                     async Task<Results<Ok<ParticipantResult>, NotFound>>(string contestName, Models.ContestStage stage, IFullResultQueryHandler resultQueryHandler, IParticipantServiceClient participantServiceClient, HttpContext context) =>
+                     async Task<Results<Ok<ParticipantResult>, NotFound>>(string contestName, Models.ContestStage stage, IResultService resultService, CancellationToken cancellationToken, IParticipantServiceClient participantServiceClient, HttpContext context) =>
                      {
                          if (await participantServiceClient.GetParticipantIdAsync(contestName, context.GetUserId()) is not { } participantId
-                          || await resultQueryHandler.HandleAsync(new(contestName, stage.MapContestStage())) is not { Published: true } contestResults
+                          || await resultService.GetResultsAsync(contestName, stage.MapContestStage(), cancellationToken) is not { Published: true } contestResults
                           || contestResults.ResultGroups
                                            .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
                                            .FirstOrDefault(row => row.Row.Item.Participant.Id == participantId) is not { } resultRow)
