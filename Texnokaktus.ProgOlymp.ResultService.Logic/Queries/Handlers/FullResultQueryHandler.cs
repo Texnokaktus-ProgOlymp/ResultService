@@ -21,35 +21,44 @@ internal class FullResultQueryHandler(AppDbContext context, ParticipantService.P
 
         if (contestResult is null) return null;
 
-        var results = (from problem in contestResult.Problems
-                       from participantId in contestResult.Problems
-                                                          .SelectMany(p => p.Results.Select(problemResult => problemResult.ParticipantId))
-                                                          .Distinct()
-                       let problemResult = contestResult.Problems.FirstOrDefault(p => p.Id == problem.Id)
-                                                       ?.Results.FirstOrDefault(result => result.ParticipantId == participantId)
-                       let result = new
-                       {
-                           ProblemId = problem.Id,
-                           ProblemAlias = problem.Alias,
-                           ParticipantId = participantId,
-                           Result = problemResult is not null
-                                        ? new ResultScore(problemResult.BaseScore,
-                                                          problemResult.Adjustments
-                                                                       .Select(adjustment => new ScoreAdjustment(adjustment.Id,
-                                                                                                                 adjustment.Adjustment,
-                                                                                                                 adjustment.Comment))
-                                                                       .ToList())
-                                        : null
-                       }
-                       group result by result.ParticipantId
-                       into grouping
-                       select new
-                       {
-                           ParticipantId = grouping.Key,
-                           Results = grouping.Select(arg => new ProblemResult(arg.ProblemId,
-                                                                              arg.ProblemAlias,
-                                                                              arg.Result))
-                       }).ToArray();
+        var results = from problem in contestResult.Problems
+                      from participantId in contestResult.Problems
+                                                         .SelectMany(p => p.Results.Select(problemResult => problemResult.ParticipantId))
+                                                         .Distinct()
+                      let problemResult = contestResult.Problems.FirstOrDefault(p => p.Id == problem.Id)
+                                                      ?.Results.FirstOrDefault(result => result.ParticipantId == participantId)
+                      let result = new
+                      {
+                          ProblemId = problem.Id,
+                          ProblemAlias = problem.Alias,
+                          ParticipantId = participantId,
+                          Result = problemResult is not null
+                                       ? new ResultScore
+                                       {
+                                           BaseScore = problemResult.BaseScore,
+                                           Adjustments = problemResult.Adjustments
+                                                                      .Select(adjustment => new ScoreAdjustment
+                                                                       {
+                                                                           Id = adjustment.Id,
+                                                                           Adjustment = adjustment.Adjustment,
+                                                                           Comment = adjustment.Comment
+                                                                       })
+                                                                      .ToList()
+                                       }
+                                       : null
+                      }
+                      group result by result.ParticipantId
+                      into grouping
+                      select new
+                      {
+                          ParticipantId = grouping.Key,
+                          Results = grouping.Select(arg => new ProblemResult
+                          {
+                              ProblemId = arg.ProblemId,
+                              Alias = arg.ProblemAlias,
+                              Score = arg.Result
+                          })
+                      };
 
         var participantsResponse = await participantServiceClient.GetContestParticipantsAsync(new()
                                                                                               {
@@ -57,29 +66,42 @@ internal class FullResultQueryHandler(AppDbContext context, ParticipantService.P
                                                                                               },
                                                                                               cancellationToken: cancellationToken);
 
-        return new(contestResult.Published,
-                   contestResult.Problems
-                                .Select(problem => new Problem(problem.Id,
-                                                               problem.Alias,
-                                                               problem.Name))
-                                .ToArray(),
-                   participantsResponse.ParticipantGroups
-                                       .Select(participantGroup => new ResultGroup(participantGroup.Name,
-                                                                                   participantGroup.Participants
-                                                                                                   .Join(results,
-                                                                                                         participant => participant.Id,
-                                                                                                         arg => arg.ParticipantId,
-                                                                                                         (participant, arg) => new ResultRow(participant.MapParticipant(), arg.Results.ToArray()))
-                                                                                                   .OrderByDescending(row => row.TotalScore)
-                                                                                                   .Rank(row => row.TotalScore)
-                                                                                                   .ToArray()))
-                                       .ToArray());
+        return new()
+        {
+            Published = contestResult.Published,
+            Problems = contestResult.Problems
+                                    .Select(problem => new Problem
+                                     {
+                                         Id = problem.Id,
+                                         Alias = problem.Alias,
+                                         Name = problem.Name
+                                     })
+                                    .ToArray(),
+            ResultGroups = participantsResponse.ParticipantGroups
+                                               .Select(participantGroup => new ResultGroup
+                                                {
+                                                    Name = participantGroup.Name,
+                                                    Rows = participantGroup.Participants
+                                                                           .Join(results,
+                                                                                 participant => participant.Id,
+                                                                                 arg => arg.ParticipantId,
+                                                                                 (participant, arg) => new ResultRow
+                                                                                 {
+                                                                                     Participant = participant.MapParticipant(),
+                                                                                     ProblemResults = arg.Results.ToArray()
+                                                                                 })
+                                                                           .OrderByDescending(row => row.TotalScore)
+                                                                           .RankBy(row => row.TotalScore)
+                                                                           .ToArray()
+                                                })
+                                               .ToArray()
+        };
     }
 }
 
 file static class MappingExtensions
 {
-    public static IEnumerable<RankedItem<TSource>> Rank<TSource>(this IEnumerable<TSource> source, Func<TSource, decimal> selector)
+    public static IEnumerable<RankedItem<TSource>> RankBy<TSource>(this IEnumerable<TSource> source, Func<TSource, decimal> selector)
     {
         var previousPlace = 0;
         var place = 0;
