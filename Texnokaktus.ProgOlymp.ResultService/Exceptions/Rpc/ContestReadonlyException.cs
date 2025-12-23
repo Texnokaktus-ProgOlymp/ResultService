@@ -1,7 +1,7 @@
 using Texnokaktus.ProgOlymp.Common.Contracts.Exceptions;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities;
 
-namespace Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
+namespace Texnokaktus.ProgOlymp.ResultService.Exceptions.Rpc;
 
 public class ContestReadonlyException(string contestName, ContestStage contestStage, Exception? innerException = null)
     : FailedPreconditionException($"The contest {contestName} {contestStage} stage is readonly", innerException);

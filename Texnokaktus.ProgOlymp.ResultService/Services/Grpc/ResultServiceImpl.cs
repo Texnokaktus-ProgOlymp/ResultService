@@ -3,7 +3,7 @@ using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Exceptions.Rpc;
+using Texnokaktus.ProgOlymp.ResultService.Exceptions.Rpc;
 using Texnokaktus.ProgOlymp.ResultService.Logic.Queries.Handlers.Abstractions;
 using ContestStage = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.ContestStage;
 
