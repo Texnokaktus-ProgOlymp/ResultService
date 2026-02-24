@@ -107,23 +107,32 @@ file static class MappingExtensions
 {
     public static IEnumerable<RankedItem<TSource>> RankBy<TSource>(this IEnumerable<TSource> source, Func<TSource, decimal> selector)
     {
-        var previousPlace = 0;
-        var place = 0;
-        decimal? previousScore = null;
+        using var enumerator = source.GetEnumerator();
 
-        foreach (var row in source)
+        if (!enumerator.MoveNext()) yield break;
+
+        var previousPlace = 1;
+        var place = 1;
+        var previousScore = selector.Invoke(enumerator.Current);
+
+        yield return new(previousPlace, enumerator.Current);
+
+        while (enumerator.MoveNext())
         {
-            var currentScore = selector.Invoke(row);
+            var currentScore = selector.Invoke(enumerator.Current);
 
             place++;
-            if (!previousScore.HasValue)
-                previousPlace++;
-            else if (previousScore != currentScore)
-                previousPlace = place;
+
+            previousPlace = previousScore.CompareTo(currentScore) switch
+            {
+                < 0 => throw new InvalidOperationException(),
+                > 0 => place,
+                _   => previousPlace
+            };
 
             previousScore = currentScore;
 
-            yield return new(previousPlace, row);
+            yield return new(previousPlace, enumerator.Current);
         }
     }
 
