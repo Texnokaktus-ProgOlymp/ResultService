@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Converters;
 
@@ -9,7 +9,7 @@ public class SchemaTransformer : IOpenApiSchemaTransformer
     {
         if (context.JsonTypeInfo.Type.IsEnum)
         {
-            schema.Type = "string";
+            schema.Type = JsonSchemaType.String;
         }
 
         return Task.CompletedTask;

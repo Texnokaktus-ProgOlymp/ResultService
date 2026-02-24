@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Converters;
 
@@ -13,9 +13,9 @@ internal sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvi
         var authenticationSchemes = await authenticationSchemeProvider.GetAllSchemesAsync();
         if (authenticationSchemes.Any(authScheme => authScheme.Name == "Bearer"))
         {
-            var requirements = new Dictionary<string, OpenApiSecurityScheme>
+            var securitySchemes = new Dictionary<string, IOpenApiSecurityScheme>
             {
-                ["Bearer"] = new()
+                ["Bearer"] = new OpenApiSecurityScheme
                 {
                     Type = SecuritySchemeType.Http,
                     Scheme = "bearer", // "bearer" refers to the header name here
@@ -24,20 +24,19 @@ internal sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvi
                 }
             };
             document.Components ??= new();
-            document.Components.SecuritySchemes = requirements;
+            document.Components.SecuritySchemes = securitySchemes;
 
             foreach (var operation in document.Paths.Values
-                                              .SelectMany(path => path.Operations)
+                                              .SelectMany(path => path.Operations ?? [])
                                               .Where(operation => context.GetActionDescriptor(operation.Value) is { } descriptor
                                                                && descriptor.RequiresAuthorization()))
             {
+                operation.Value.Security ??= [];
                 operation.Value.Security.Add(new()
                 {
-                    [new() { Reference = new() { Id = "Bearer", Type = ReferenceType.SecurityScheme } }] = []
+                    [new("Bearer", document)] = []
                 });
             }
-            
-            
         }
     }
 }
@@ -53,7 +52,8 @@ file static class OpenApiExtensions
                          .Any();
 
     public static ActionDescriptor? GetActionDescriptor(this OpenApiDocumentTransformerContext context, OpenApiOperation apiOperation) =>
-        apiOperation.Annotations.TryGetValue("x-aspnetcore-id", out var obj)
+        apiOperation.Metadata is { } metadata
+     && metadata.TryGetValue("x-aspnetcore-id", out var obj)
      && obj is string id
             ? context.DescriptionGroups
                      .SelectMany(group => group.Items)
