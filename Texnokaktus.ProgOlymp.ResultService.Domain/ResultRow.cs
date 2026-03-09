@@ -1,13 +1,9 @@
 namespace Texnokaktus.ProgOlymp.ResultService.Domain;
 
-public record ResultRow(Participant Participant, IReadOnlyCollection<ProblemResult> ProblemResults)
+public record ResultRow
 {
-    public int Place { get; private set; }
-    public decimal TotalScore => ProblemResults.Sum(result => result.Score?.TotalScore) ?? 0m;
+    public required Participant Participant { get; init; }
+    public required IReadOnlyCollection<ProblemResult> ProblemResults { get; init; }
 
-    public ResultRow WithPlace(int place)
-    {
-        Place = place;
-        return this;
-    }
+    public decimal TotalScore => ProblemResults.Sum(result => result.Score?.TotalScore) ?? 0m;
 }

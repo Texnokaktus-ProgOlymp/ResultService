@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using Texnokaktus.ProgOlymp.Cqrs;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Extensions;
-using Texnokaktus.ProgOlymp.ResultService.Logic.Queries;
+using Texnokaktus.ProgOlymp.ResultService.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Models;
+using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 using ContestResults = Texnokaktus.ProgOlymp.ResultService.Models.ContestResults;
 using ContestStage = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.ContestStage;
 using Participant = Texnokaktus.ProgOlymp.ResultService.Models.Participant;
@@ -18,39 +18,44 @@ public static class ResultEndpoints
 {
     public static IEndpointRouteBuilder MapResultEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/contests/{contestId:int}/{stage}/results");
+        var group = app.MapGroup("/contests/{contestName}/{stage}/results")
+                       .WithTags("Results");
 
         group.MapGet("/",
-                     async Task<Results<Ok<ContestResults>, NotFound>> (int contestId, Models.ContestStage stage, IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler) =>
+                     async Task<Results<Ok<ContestResults>, NotFound>> (string contestName, Models.ContestStage stage, IResultService resultService, CancellationToken cancellationToken) =>
                      {
-                         if (await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults)
+                         if (await resultService.GetResultsAsync(contestName, stage.MapContestStage(), cancellationToken) is not { Published: true } contestResults)
                              return TypedResults.NotFound();
 
                          var results = new ContestResults(contestResults.Problems.Select(problem => problem.MapProblem()),
                                                           contestResults.ResultGroups.Select(resultGroup => resultGroup.MapResultGroup()));
 
                          return TypedResults.Ok(results);
-                     });
+                     })
+             .WithName("GetCommonStageResults")
+             .WithSummary("Get common contest stage results");
 
         group.MapGet("/personal",
-                     async Task<Results<Ok<ParticipantResult>, NotFound>>(int contestId, Models.ContestStage stage, IQueryHandler<FullResultQuery, Domain.ContestResults?> resultQueryHandler, IQueryHandler<ParticipantIdQuery, int?> participantIdHandler, HttpContext context) =>
+                     async Task<Results<Ok<ParticipantResult>, NotFound>>(string contestName, Models.ContestStage stage, IResultService resultService, CancellationToken cancellationToken, IParticipantServiceClient participantServiceClient, HttpContext context) =>
                      {
-                         if (await participantIdHandler.HandleAsync(new(contestId, context.GetUserId())) is not { } participantId
-                          || await resultQueryHandler.HandleAsync(new(contestId, stage.MapContestStage())) is not { Published: true } contestResults
+                         if (await participantServiceClient.GetParticipantIdAsync(contestName, context.GetUserId()) is not { } participantId
+                          || await resultService.GetResultsAsync(contestName, stage.MapContestStage(), cancellationToken) is not { Published: true } contestResults
                           || contestResults.ResultGroups
                                            .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
-                                           .FirstOrDefault(row => row.Row.Participant.Id == participantId) is not { } resultRow)
+                                           .FirstOrDefault(row => row.Row.Item.Participant.Id == participantId) is not { } resultRow)
                              return TypedResults.NotFound();
 
-                         var result = new ParticipantResult(resultRow.Row.Place,
+                         var result = new ParticipantResult(resultRow.Row.Rank,
                                                             resultRow.Group,
                                                             contestResults.Problems.Select(problem => problem.MapProblem()),
-                                                            resultRow.Row.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
-                                                                                                      problemResult => problemResult.MapProblemResult(score => score.MapExtendedScore())),
-                                                            resultRow.Row.TotalScore);
+                                                            resultRow.Row.Item.ProblemResults.ToDictionary(problemResult => problemResult.Alias, 
+                                                                                                           problemResult => problemResult.MapProblemResult(score => score.MapExtendedScore())),
+                                                            resultRow.Row.Item.TotalScore);
 
                          return TypedResults.Ok(result);
                      })
+             .WithName("GetPersonalStageResults")
+             .WithSummary("Get personal contest stage results")
              .RequireAuthorization();
 
         return app;
@@ -64,12 +69,12 @@ file static class MappingExtensions
     public static ResultGroup MapResultGroup(this Domain.ResultGroup resultGroup) =>
         new(resultGroup.Name, resultGroup.Rows.Select(row => row.MapResultRow()));
 
-    private static ResultRow MapResultRow(this Domain.ResultRow resultRow) =>
-        new(resultRow.Place,
-            resultRow.Participant.MapParticipant(),
-            resultRow.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
-                                                  problemResult => problemResult.MapProblemResult(score => score.MapScore())),
-            resultRow.TotalScore);
+    private static ResultRow MapResultRow(this RankedItem<Domain.ResultRow> resultRow) =>
+        new(resultRow.Rank,
+            resultRow.Item.Participant.MapParticipant(),
+            resultRow.Item.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
+                                                       problemResult => problemResult.MapProblemResult(score => score.MapScore())),
+            resultRow.Item.TotalScore);
 
     private static Score MapScore(this ResultScore resultScore) =>
         new(resultScore.BaseScore,
@@ -90,9 +95,9 @@ file static class MappingExtensions
 
     public static ProblemResult<TScore> MapProblemResult<TScore>(this ProblemResult problemResult, Func<ResultScore, TScore> resultScoreMapper) where TScore : class =>
         new(problemResult.Score is { } score
-            ? resultScoreMapper.Invoke(score)
-            : null);
-    
+                ? resultScoreMapper.Invoke(score)
+                : null);
+
     public static ContestStage MapContestStage(this Models.ContestStage stage) => stage switch
     {
         Models.ContestStage.Preliminary => ContestStage.Preliminary,

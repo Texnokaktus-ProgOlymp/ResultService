@@ -6,23 +6,23 @@ namespace Texnokaktus.ProgOlymp.ResultService.Infrastructure.Clients;
 
 public class ParticipantServiceClient(ParticipantService.ParticipantServiceClient client) : IParticipantServiceClient
 {
-    public async Task<GetContestParticipantsResponse> GetContestParticipantsAsync(int contestId)
+    public async Task<GetContestParticipantsResponse> GetContestParticipantsAsync(string contestName)
     {
         var request = new GetContestParticipantsRequest
         {
-            ContestId = contestId
+            ContestName = contestName
         };
 
         return await client.GetContestParticipantsAsync(request);
     }
 
-    public async Task<int?> GetParticipantIdAsync(int contestId, int userId)
+    public async Task<int?> GetParticipantIdAsync(string contestName, int userId)
     {
         try
         {
             var request = new GetParticipantIdRequest
             {
-                ContestId = contestId,
+                ContestName = contestName,
                 UserId = userId
             };
 

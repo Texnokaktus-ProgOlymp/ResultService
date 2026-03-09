@@ -1,3 +1,7 @@
 namespace Texnokaktus.ProgOlymp.ResultService.Domain;
 
-public record ResultGroup(string Name, IReadOnlyCollection<ResultRow> Rows);
+public record ResultGroup
+{
+    public required string Name { get; init; }
+    public required IReadOnlyCollection<RankedItem<ResultRow>> Rows { get; init; }
+}
