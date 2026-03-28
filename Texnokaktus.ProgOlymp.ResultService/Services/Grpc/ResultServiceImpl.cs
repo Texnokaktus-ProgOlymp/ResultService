@@ -190,7 +190,7 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
 
         var contestResult = await dbContext.ContestResults
                                            .Include(contestResult => contestResult.Problems.Where(problem => problem.Alias == request.Alias))
-                                           .ThenInclude(problem => problem.Results.Select(result => result.ParticipantId == request.ParticipantId))
+                                           .ThenInclude(problem => problem.Results.Where(result => result.ParticipantId == request.ParticipantId))
                                            .FirstOrDefaultAsync(contestResult => contestResult.ContestName == request.ContestName
                                                                               && contestResult.Stage == contestStage,
                                                                 context.CancellationToken)
