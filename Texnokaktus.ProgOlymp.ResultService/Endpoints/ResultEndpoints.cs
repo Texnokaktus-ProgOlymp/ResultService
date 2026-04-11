@@ -50,7 +50,8 @@ public static class ResultEndpoints
                                                             contestResults.Problems.Select(problem => problem.MapProblem()),
                                                             resultRow.Row.Item.ProblemResults.ToDictionary(problemResult => problemResult.Alias, 
                                                                                                            problemResult => problemResult.MapProblemResult(score => score.MapExtendedScore())),
-                                                            resultRow.Row.Item.TotalScore);
+                                                            resultRow.Row.Item.TotalScore,
+                                                            resultRow.Row.Item.DisqualificationNote is not null);
 
                          return TypedResults.Ok(result);
                      })
@@ -74,7 +75,8 @@ file static class MappingExtensions
             resultRow.Item.Participant.MapParticipant(),
             resultRow.Item.ProblemResults.ToDictionary(problemResult => problemResult.Alias,
                                                        problemResult => problemResult.MapProblemResult(score => score.MapScore())),
-            resultRow.Item.TotalScore);
+            resultRow.Item.TotalScore,
+            resultRow.Item.DisqualificationNote is not null);
 
     private static Score MapScore(this ResultScore resultScore) =>
         new(resultScore.BaseScore,
