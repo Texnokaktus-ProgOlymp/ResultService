@@ -135,7 +135,8 @@ public class ResultServiceImpl(AppDbContext dbContext, IResultService resultServ
                                                                          Score = result.Score?.MapResultScore()
                                                                      })
                                                        },
-                                                       TotalScore = resultRow.Item.TotalScore
+                                                       TotalScore = resultRow.Item.TotalScore,
+                                                       IsDisqualified = resultRow.Item.DisqualificationNote is not null
                                                    })
                                    }
                                })

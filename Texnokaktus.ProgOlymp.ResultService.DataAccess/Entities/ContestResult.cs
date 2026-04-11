@@ -8,4 +8,5 @@ public record ContestResult
     public required long StageId { get; init; }
     public bool Published { get; set; }
     public ICollection<Problem> Problems { get; init; }
+    public ICollection<DisqualificationNote> DisqualificationNotes { get; init; }
 }
