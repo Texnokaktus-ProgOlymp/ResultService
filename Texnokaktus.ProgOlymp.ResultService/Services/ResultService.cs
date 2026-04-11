@@ -4,6 +4,7 @@ using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
+using DisqualificationNote = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.DisqualificationNote;
 using Problem = Texnokaktus.ProgOlymp.ResultService.Domain.Problem;
 using ProblemResult = Texnokaktus.ProgOlymp.ResultService.Domain.ProblemResult;
 using ScoreAdjustment = Texnokaktus.ProgOlymp.ResultService.Domain.ScoreAdjustment;
@@ -17,6 +18,7 @@ public class ResultService(AppDbContext context, ParticipantService.ParticipantS
         var contestResult = await context.ContestResults
                                          .AsNoTracking()
                                          .AsSplitQuery()
+                                         .Include(contestResult => contestResult.DisqualificationNotes)
                                          .Include(contestResult => contestResult.Problems.OrderBy(problem => problem.Alias))
                                          .ThenInclude(problem => problem.Results)
                                          .FirstOrDefaultAsync(contestResult => contestResult.ContestName == contestName
@@ -86,16 +88,27 @@ public class ResultService(AppDbContext context, ParticipantService.ParticipantS
                                                 {
                                                     Name = participantGroup.Name,
                                                     Rows = participantGroup.Participants
+                                                                           .LeftJoin(contestResult.DisqualificationNotes,
+                                                                                     participant => participant.Id,
+                                                                                     disqualificationNote => disqualificationNote.ParticipantId,
+                                                                                     (participant, disqualificationNote) => new
+                                                                                     {
+                                                                                         Participant = participant.MapParticipant(),
+                                                                                         DisqualificationNote = disqualificationNote
+                                                                                     })
                                                                            .Join(results,
-                                                                                 participant => participant.Id,
+                                                                                 arg => arg.Participant.Id,
                                                                                  arg => arg.ParticipantId,
-                                                                                 (participant, arg) => new ResultRow
+                                                                                 (left, right) => new ResultRow
                                                                                  {
-                                                                                     Participant = participant.MapParticipant(),
-                                                                                     ProblemResults = arg.Results.ToArray()
+                                                                                     Participant = left.Participant,
+                                                                                     ProblemResults = right.Results.ToArray(),
+                                                                                     DisqualificationNote = left.DisqualificationNote?.MapDisqualificationNote()
                                                                                  })
-                                                                           .OrderByDescending(row => row.TotalScore)
-                                                                           .RankBy(row => row.TotalScore)
+                                                                           .OrderBy(row => row.DisqualificationNote is not null)
+                                                                           .ThenByDescending(row => row.TotalScore)
+                                                                           .RankBy(row => row.DisqualificationNote is null,
+                                                                                   row => row.TotalScore ?? 0m)
                                                                            .ToArray()
                                                 })
                                                .ToArray()
@@ -105,7 +118,9 @@ public class ResultService(AppDbContext context, ParticipantService.ParticipantS
 
 file static class MappingExtensions
 {
-    public static IEnumerable<RankedItem<TSource>> RankBy<TSource>(this IEnumerable<TSource> source, Func<TSource, decimal> selector)
+    public static IEnumerable<RankedItem<TSource>> RankBy<TSource>(this IEnumerable<TSource> source,
+                                                                   Func<TSource, bool> rankingCondition,
+                                                                   Func<TSource, decimal> selector)
     {
         using var enumerator = source.GetEnumerator();
 
@@ -119,6 +134,12 @@ file static class MappingExtensions
 
         while (enumerator.MoveNext())
         {
+            if (!rankingCondition.Invoke(enumerator.Current))
+            {
+                yield return new(null, enumerator.Current);
+                continue;
+            }
+
             var currentScore = selector.Invoke(enumerator.Current);
 
             place++;
@@ -141,4 +162,7 @@ file static class MappingExtensions
 
     private static string MapName(this Name name) =>
         string.Join(" ", new[] { name.LastName, name.FirstName, name.Patronym }.Where(namePart => namePart is not null));
+
+    public static Domain.DisqualificationNote MapDisqualificationNote(this DisqualificationNote disqualificationNote) =>
+        new(disqualificationNote.Reason);
 }
