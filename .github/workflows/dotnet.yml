@@ -49,7 +49,9 @@ jobs:
 
       - name: Version
         id: get-version
-        run: echo "version=1.${{ github.run_number }}.${{ github.run_attempt }}" >> $GITHUB_OUTPUT
+        run: echo "version=$(date +'%Y.%-m.%-d').${{ github.run_number }}" >> $GITHUB_OUTPUT
+        env:
+          TZ: Europe/Moscow
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -71,7 +73,7 @@ jobs:
           sep-tags: ','
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags:
-            type=semver,pattern={{version}},value=v${{ steps.get-version.outputs.version }}
+            ${{ steps.get-version.outputs.version }}
 
       - name: Get image name
         id: get-image-name
