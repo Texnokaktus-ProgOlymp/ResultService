@@ -22,6 +22,10 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             builder.HasMany(contestResult => contestResult.Problems)
                    .WithOne()
                    .HasForeignKey(problem => problem.ContestResultId);
+
+            builder.HasMany(contestResult => contestResult.DisqualificationNotes)
+                   .WithOne()
+                   .HasForeignKey(disqualificationNote => disqualificationNote.ContestResultId);
         });
 
         modelBuilder.Entity<Problem>(builder =>
