@@ -15,7 +15,7 @@ WORKDIR /src
 COPY ["Directory.Packages.props", "./"]
 COPY ["modules/Common.Contracts/Directory.Packages.props", "modules/Common.Contracts/"]
 COPY ["Directory.Build.props", "./"]
-COPY ["src/Directory.Build.props", "./src"]
+COPY ["src/Directory.Build.props", "src/"]
 COPY ["src/Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj", "src/Texnokaktus.ProgOlymp.ResultService/"]
 COPY ["modules/Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts.csproj", "modules/Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts/"]
 COPY ["src/Texnokaktus.ProgOlymp.ResultService.DataAccess/Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj", "src/Texnokaktus.ProgOlymp.ResultService.DataAccess/"]
@@ -24,7 +24,7 @@ COPY ["src/Texnokaktus.ProgOlymp.ResultService.Infrastructure/Texnokaktus.ProgOl
 RUN dotnet nuget add source --username kav128 --password $GHPAT --store-password-in-clear-text --name "GitHub Texnokaktus-Progolymp" https://nuget.pkg.github.com/Texnokaktus-ProgOlymp/index.json
 RUN dotnet restore "./src/Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj" --runtime $TARGETOS-$TARGETARCH
 COPY . .
-WORKDIR "/src/Texnokaktus.ProgOlymp.ResultService"
+WORKDIR "/src/src/Texnokaktus.ProgOlymp.ResultService"
 RUN dotnet build "./Texnokaktus.ProgOlymp.ResultService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
