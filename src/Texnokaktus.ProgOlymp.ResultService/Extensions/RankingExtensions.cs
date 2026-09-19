@@ -2,7 +2,7 @@ using Texnokaktus.ProgOlymp.ResultService.Domain;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Extensions;
 
-public static class RankingExtensions
+internal static class RankingExtensions
 {
     extension<TSource>(IEnumerable<TSource> source)
     {

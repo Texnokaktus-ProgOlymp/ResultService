@@ -4,4 +4,8 @@
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Texnokaktus.ProgOlymp.ResultService\Texnokaktus.ProgOlymp.ResultService.csproj" />
+    </ItemGroup>
+
 </Project>
