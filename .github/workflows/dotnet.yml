@@ -3,10 +3,6 @@
 
 name: .NET
 
-permissions:
-  contents: read
-  packages: read
-
 on:
   push:
     branches: [ "master" ]
@@ -53,6 +49,10 @@ jobs:
         run: cat coverage-report/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
 
   docker:
+
+    permissions:
+      contents: write
+      packages: write
 
     needs: build
     runs-on: ubuntu-latest
