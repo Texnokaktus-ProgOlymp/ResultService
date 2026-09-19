@@ -16,6 +16,7 @@
   </Folder>
   <Folder Name="/tests/">
     <File Path="tests/Directory.Build.props" />
+    <Project Path="tests/Texnokaktus.ProgOlymp.ResultService.IntegrationTests/Texnokaktus.ProgOlymp.ResultService.IntegrationTests.csproj" />
     <Project Path="tests/Texnokaktus.ProgOlymp.ResultService.Tests/Texnokaktus.ProgOlymp.ResultService.Tests.csproj" />
   </Folder>
 </Solution>

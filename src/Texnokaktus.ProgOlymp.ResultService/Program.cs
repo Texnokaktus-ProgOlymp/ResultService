@@ -1,9 +1,6 @@
-using System.Reflection;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using StackExchange.Redis;
 using Texnokaktus.ProgOlymp.Identity.Extensions;
 using Texnokaktus.ProgOlymp.Platform;
 using Texnokaktus.ProgOlymp.ResultService.Converters;
@@ -16,19 +13,13 @@ using Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.UsePlatform();
+if (!builder.Environment.IsEnvironment("Testing"))
+    builder.UsePlatform();
 
 builder.Services
        .AddDataAccess(optionsBuilder => optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("DefaultDb"))
                                                       .EnableSensitiveDataLogging(builder.Environment.IsDevelopment()))
        .AddScoped<IResultService, ResultService>();
-
-var connectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(builder.Configuration.GetConnectionString("DefaultRedis")!);
-builder.Services.AddSingleton<IConnectionMultiplexer>(connectionMultiplexer);
-
-builder.Services
-       .AddDataProtection(options => options.ApplicationDiscriminator = Assembly.GetEntryAssembly()?.GetName().Name)
-       .PersistKeysToStackExchangeRedis(connectionMultiplexer);
 
 builder.Services.AddGrpcClients(builder.Configuration);
 
