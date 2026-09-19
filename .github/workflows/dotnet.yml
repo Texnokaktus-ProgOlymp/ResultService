@@ -3,6 +3,10 @@
 
 name: .NET
 
+permissions:
+  contents: read
+  packages: read
+
 on:
   push:
     branches: [ "master" ]
@@ -68,7 +72,7 @@ jobs:
 
       - name: Version
         id: get-version
-        run: echo "version=$(git show -s --format='%Y.%-m.%-d' HEAD).${{ github.run_number }}" >> $GITHUB_OUTPUT
+        run: echo "version=$(git show --no-patch --format=%ad --date=format:'%Y.%-m.%-d' HEAD).${{ github.run_number }}" >> $GITHUB_OUTPUT
         env:
           TZ: Europe/Moscow
 
@@ -105,8 +109,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           context: .
           build-args: |
-            GHPAT=${{ secrets.GITHUB_TOKEN }}
             VERSION=${{ steps.get-version.outputs.version }}
+          secrets: |
+            GHPAT=${{ secrets.GITHUB_TOKEN }}
           file: src/Texnokaktus.ProgOlymp.ResultService/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}

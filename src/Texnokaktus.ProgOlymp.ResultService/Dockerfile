@@ -1,13 +1,12 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER $APP_UID
 WORKDIR /app
-ENV SERVICE_NAME result-service
+ENV SERVICE_NAME=result-service
 EXPOSE 8080
 EXPOSE 8081
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
-ARG GHPAT
 ARG VERSION
 ARG TARGETOS
 ARG TARGETARCH
@@ -21,9 +20,9 @@ COPY ["modules/Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts/Texnokakt
 COPY ["src/Texnokaktus.ProgOlymp.ResultService.DataAccess/Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj", "src/Texnokaktus.ProgOlymp.ResultService.DataAccess/"]
 COPY ["src/Texnokaktus.ProgOlymp.ResultService.Domain/Texnokaktus.ProgOlymp.ResultService.Domain.csproj", "src/Texnokaktus.ProgOlymp.ResultService.Domain/"]
 COPY ["src/Texnokaktus.ProgOlymp.ResultService.Infrastructure/Texnokaktus.ProgOlymp.ResultService.Infrastructure.csproj", "src/Texnokaktus.ProgOlymp.ResultService.Infrastructure/"]
-RUN dotnet nuget add source --username kav128 --password $GHPAT --store-password-in-clear-text --name "GitHub Texnokaktus-Progolymp" https://nuget.pkg.github.com/Texnokaktus-ProgOlymp/index.json
+RUN --mount=type=secret,id=GHPAT dotnet nuget add source --username kav128 --password "$(cat /run/secrets/GHPAT)" --store-password-in-clear-text --name "GitHub Texnokaktus-Progolymp" https://nuget.pkg.github.com/Texnokaktus-ProgOlymp/index.json
 WORKDIR "/src/src"
-RUN dotnet restore "./Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj" --runtime $TARGETOS-$TARGETARCH
+RUN dotnet restore "./Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj" --runtime $TARGETOS-$TARGETARCH --verbosity diagnostic
 COPY . .
 WORKDIR "/src/src/Texnokaktus.ProgOlymp.ResultService"
 RUN dotnet build "./Texnokaktus.ProgOlymp.ResultService.csproj" -c $BUILD_CONFIGURATION -o /app/build
