@@ -3,6 +3,7 @@ using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Participants;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
+using Texnokaktus.ProgOlymp.ResultService.Extensions;
 using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 using DisqualificationNote = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.DisqualificationNote;
 using Problem = Texnokaktus.ProgOlymp.ResultService.Domain.Problem;
@@ -105,10 +106,9 @@ public class ResultService(AppDbContext context, ParticipantService.ParticipantS
                                                                                      ProblemResults = right.Results.ToArray(),
                                                                                      DisqualificationNote = left.DisqualificationNote?.MapDisqualificationNote()
                                                                                  })
-                                                                           .OrderBy(row => row.DisqualificationNote is not null)
-                                                                           .ThenByDescending(row => row.TotalScore)
+                                                                           .OrderByDescending(row => row.TotalScore)
                                                                            .RankBy(row => row.DisqualificationNote is null,
-                                                                                   row => row.TotalScore ?? 0m)
+                                                                                   ResultRowComparer.Instance)
                                                                            .ToArray()
                                                 })
                                                .ToArray()
@@ -116,47 +116,15 @@ public class ResultService(AppDbContext context, ParticipantService.ParticipantS
     }
 }
 
+file class ResultRowComparer : IComparer<ResultRow>
+{
+    public static readonly ResultRowComparer Instance = new();
+
+    public int Compare(ResultRow? x, ResultRow? y) => decimal.Compare(x?.TotalScore ?? 0m, y?.TotalScore ?? 0m);
+}
+
 file static class MappingExtensions
 {
-    public static IEnumerable<RankedItem<TSource>> RankBy<TSource>(this IEnumerable<TSource> source,
-                                                                   Func<TSource, bool> rankingCondition,
-                                                                   Func<TSource, decimal> selector)
-    {
-        using var enumerator = source.GetEnumerator();
-
-        if (!enumerator.MoveNext()) yield break;
-
-        var previousPlace = 1;
-        var place = 1;
-        var previousScore = selector.Invoke(enumerator.Current);
-
-        yield return new(previousPlace, enumerator.Current);
-
-        while (enumerator.MoveNext())
-        {
-            if (!rankingCondition.Invoke(enumerator.Current))
-            {
-                yield return new(null, enumerator.Current);
-                continue;
-            }
-
-            var currentScore = selector.Invoke(enumerator.Current);
-
-            place++;
-
-            previousPlace = previousScore.CompareTo(currentScore) switch
-            {
-                < 0 => throw new InvalidOperationException(),
-                > 0 => place,
-                _   => previousPlace
-            };
-
-            previousScore = currentScore;
-
-            yield return new(previousPlace, enumerator.Current);
-        }
-    }
-
     public static Domain.Participant MapParticipant(this Common.Contracts.Grpc.Participants.Participant participant) =>
         new(participant.Id, participant.Name.MapName(), participant.Grade);
 
