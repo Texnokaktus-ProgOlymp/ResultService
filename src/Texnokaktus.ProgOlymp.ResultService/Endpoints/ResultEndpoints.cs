@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Texnokaktus.ProgOlymp.Identity.Extensions;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
-using Texnokaktus.ProgOlymp.ResultService.Extensions;
 using Texnokaktus.ProgOlymp.ResultService.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Models;
 using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;

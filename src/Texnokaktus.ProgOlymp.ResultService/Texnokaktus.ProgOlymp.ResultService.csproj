@@ -15,6 +15,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
+    <PackageReference Include="Texnokaktus.ProgOlymp.Identity" />
     <PackageReference Include="Texnokaktus.ProgOlymp.Platform" />
   </ItemGroup>
 
