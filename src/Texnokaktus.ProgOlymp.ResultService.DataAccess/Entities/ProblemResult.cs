@@ -6,5 +6,5 @@ public record ProblemResult
     public int ProblemId { get; init; }
     public required int ParticipantId { get; init; }
     public required decimal BaseScore { get; init; }
-    public ICollection<ScoreAdjustment> Adjustments { get; init; }
+    public ICollection<ScoreAdjustment> Adjustments { get; init; } = null!;
 }

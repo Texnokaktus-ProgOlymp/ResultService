@@ -19,6 +19,6 @@
     <PackageVersion Include="NUnit3TestAdapter" Version="6.3.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.3" />
     <PackageVersion Include="Texnokaktus.ProgOlymp.Identity" Version="2026.9.19.2" />
-    <PackageVersion Include="Texnokaktus.ProgOlymp.Platform" Version="2026.4.11.1" />
+    <PackageVersion Include="Texnokaktus.ProgOlymp.Platform" Version="2026.9.19.2" />
   </ItemGroup>
 </Project>
