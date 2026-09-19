@@ -1,6 +1,7 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER $APP_UID
 WORKDIR /app
+ENV SERVICE_NAME result-service
 EXPOSE 8080
 EXPOSE 8081
 
@@ -13,11 +14,13 @@ ARG TARGETARCH
 WORKDIR /src
 COPY ["Directory.Packages.props", "./"]
 COPY ["modules/Common.Contracts/Directory.Packages.props", "modules/Common.Contracts/"]
-COPY ["Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj", "Texnokaktus.ProgOlymp.ResultService/"]
+COPY ["Directory.Build.props", "./"]
+COPY ["src/Directory.Build.props", "./"]
+COPY ["src/Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj", "Texnokaktus.ProgOlymp.ResultService/"]
 COPY ["modules/Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts.csproj", "modules/Common.Contracts/Texnokaktus.ProgOlymp.Common.Contracts/"]
-COPY ["Texnokaktus.ProgOlymp.ResultService.DataAccess/Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj", "Texnokaktus.ProgOlymp.ResultService.DataAccess/"]
-COPY ["Texnokaktus.ProgOlymp.ResultService.Domain/Texnokaktus.ProgOlymp.ResultService.Domain.csproj", "Texnokaktus.ProgOlymp.ResultService.Domain/"]
-COPY ["Texnokaktus.ProgOlymp.ResultService.Infrastructure/Texnokaktus.ProgOlymp.ResultService.Infrastructure.csproj", "Texnokaktus.ProgOlymp.ResultService.Infrastructure/"]
+COPY ["src/Texnokaktus.ProgOlymp.ResultService.DataAccess/Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj", "Texnokaktus.ProgOlymp.ResultService.DataAccess/"]
+COPY ["src/Texnokaktus.ProgOlymp.ResultService.Domain/Texnokaktus.ProgOlymp.ResultService.Domain.csproj", "Texnokaktus.ProgOlymp.ResultService.Domain/"]
+COPY ["src/Texnokaktus.ProgOlymp.ResultService.Infrastructure/Texnokaktus.ProgOlymp.ResultService.Infrastructure.csproj", "Texnokaktus.ProgOlymp.ResultService.Infrastructure/"]
 RUN dotnet nuget add source --username kav128 --password $GHPAT --store-password-in-clear-text --name "GitHub Texnokaktus-Progolymp" https://nuget.pkg.github.com/Texnokaktus-ProgOlymp/index.json
 RUN dotnet restore "Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj" --runtime $TARGETOS-$TARGETARCH
 COPY . .

@@ -3,9 +3,8 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
 using StackExchange.Redis;
-using Texnokaktus.ProgOlymp.OpenTelemetry;
+using Texnokaktus.ProgOlymp.Platform;
 using Texnokaktus.ProgOlymp.ResultService.Converters;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess;
 using Texnokaktus.ProgOlymp.ResultService.Endpoints;
@@ -15,9 +14,9 @@ using Texnokaktus.ProgOlymp.ResultService.Services;
 using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
 
-const string serviceName = "ResultService";
-
 var builder = WebApplication.CreateBuilder(args);
+
+builder.UsePlatform();
 
 builder.Services
        .AddDataAccess(optionsBuilder => optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("DefaultDb"))
@@ -40,10 +39,6 @@ builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.C
 
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
-
-builder.Services.AddTexnokaktusOpenTelemetry(serviceName, null, null);
-builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration)
-                                                                 .AddOpenTelemetrySupport(serviceName));
 
 builder.Services
        .AddAuthentication(options =>
