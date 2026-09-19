@@ -5,6 +5,7 @@
     <NoWarn>$(NoWarn);NU1507</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <PackageVersion Include="Grpc.AspNetCore" Version="2.76.0" />
     <PackageVersion Include="Grpc.AspNetCore.Server.Reflection" Version="2.76.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
@@ -12,6 +13,10 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.5" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="NUnit" Version="4.6.1" />
+    <PackageVersion Include="NUnit.Analyzers" Version="4.15.0" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="6.3.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="Serilog.Enrichers.AssemblyName" Version="2.0.0" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />

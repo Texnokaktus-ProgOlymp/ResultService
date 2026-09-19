@@ -4,10 +4,18 @@
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".github/workflows/dotnet.yml" />
+    <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
   </Folder>
-  <Project Path="Texnokaktus.ProgOlymp.ResultService.DataAccess/Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj" />
-  <Project Path="Texnokaktus.ProgOlymp.ResultService.Domain/Texnokaktus.ProgOlymp.ResultService.Domain.csproj" />
-  <Project Path="Texnokaktus.ProgOlymp.ResultService.Infrastructure/Texnokaktus.ProgOlymp.ResultService.Infrastructure.csproj" />
-  <Project Path="Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj" />
+  <Folder Name="/src/">
+    <File Path="src/Directory.Build.props" />
+    <Project Path="src/Texnokaktus.ProgOlymp.ResultService.DataAccess/Texnokaktus.ProgOlymp.ResultService.DataAccess.csproj" />
+    <Project Path="src/Texnokaktus.ProgOlymp.ResultService.Domain/Texnokaktus.ProgOlymp.ResultService.Domain.csproj" />
+    <Project Path="src/Texnokaktus.ProgOlymp.ResultService.Infrastructure/Texnokaktus.ProgOlymp.ResultService.Infrastructure.csproj" />
+    <Project Path="src/Texnokaktus.ProgOlymp.ResultService/Texnokaktus.ProgOlymp.ResultService.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <File Path="tests/Directory.Build.props" />
+    <Project Path="tests/Texnokaktus.ProgOlymp.ResultService.Tests/Texnokaktus.ProgOlymp.ResultService.Tests.csproj" />
+  </Folder>
 </Solution>

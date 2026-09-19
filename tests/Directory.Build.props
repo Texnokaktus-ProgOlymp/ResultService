@@ -1,0 +1,27 @@
+<Project>
+
+    <PropertyGroup>
+        <DirectoryBuildPropsPath>$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))</DirectoryBuildPropsPath>
+    </PropertyGroup>
+
+    <Import Project="$(DirectoryBuildPropsPath)" Condition="'$(DirectoryBuildPropsPath)' != ''" />
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="NUnit" />
+        <PackageReference Include="NUnit.Analyzers">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="NUnit3TestAdapter" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="NUnit.Framework"/>
+    </ItemGroup>
+
+</Project>
