@@ -13,21 +13,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x.x
+
       - name: Setup NuGet
         run: dotnet nuget add source --username Texnokaktus-ProgOlymp --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Texnokaktus-ProgOlymp/index.json"
+
       - name: Restore dependencies
         run: dotnet restore
+
       - name: Build
         run: dotnet build --no-restore
+
       - name: Test
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage"
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Generate coverage report
+        run: |
+          reportgenerator \
+            -reports:"**/TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"coverage-report" \
+            -reporttypes:"Cobertura;MarkdownSummaryGithub"
+
+      - name: Add coverage to summary
+        run: cat coverage-report/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
 
   docker:
 
@@ -49,7 +68,7 @@ jobs:
 
       - name: Version
         id: get-version
-        run: echo "version=$(date +'%Y.%-m.%-d').${{ github.run_number }}" >> $GITHUB_OUTPUT
+        run: echo "version=$(git show -s --format='%Y.%-m.%-d' HEAD).${{ github.run_number }}" >> $GITHUB_OUTPUT
         env:
           TZ: Europe/Moscow
 
