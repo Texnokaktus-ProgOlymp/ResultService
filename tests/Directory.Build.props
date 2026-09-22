@@ -3,6 +3,7 @@
     <PropertyGroup>
         <DirectoryBuildPropsPath>$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))</DirectoryBuildPropsPath>
         <EnableNUnitRunner>true</EnableNUnitRunner>
+        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
