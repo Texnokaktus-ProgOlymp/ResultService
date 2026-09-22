@@ -3,7 +3,7 @@ using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
 
 namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
 
-public class ContestCreationTests : GlobalSetup
+public class ContestCreationTests : SetupBase
 {
     [Test]
     public async Task CreateContests_Success()
@@ -29,12 +29,12 @@ public class ContestCreationTests : GlobalSetup
         );
 
         var contest1 = await client.GetContestAsync(
-                          new()
-                          {
-                              ContestName = "test",
-                              Stage = ContestStage.Preliminary
-                          }
-                      );
+                           new()
+                           {
+                               ContestName = "test",
+                               Stage = ContestStage.Preliminary
+                           }
+                       );
 
         var contest2 = await client.GetContestAsync(
                            new()
@@ -72,73 +72,85 @@ public class ContestCreationTests : GlobalSetup
             }
         );
 
-        var contest1 = await client.GetContestAsync(
-                           new()
-                           {
-                               ContestName = "test",
-                               Stage = ContestStage.Preliminary
-                           }
-                       );
+        var contest = await client.GetContestAsync(
+                          new()
+                          {
+                              ContestName = "test",
+                              Stage = ContestStage.Preliminary
+                          }
+                      );
 
         var action = async () => await client.AddContestAsync(
-            new()
-            {
-                StageId = 1001,
-                ContestName = "test",
-                Stage = ContestStage.Preliminary
-            }
-        );
+                                     new()
+                                     {
+                                         StageId = 1001,
+                                         ContestName = "test",
+                                         Stage = ContestStage.Preliminary
+                                     }
+                                 );
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(contest1.Id, Is.EqualTo(1));
-            Assert.That(contest1.StageId, Is.EqualTo(1000));
-            Assert.That(contest1.Stage, Is.EqualTo(ContestStage.Preliminary));
-            Assert.That(contest1.Problems, Is.Empty);
-            
-            Assert.That(action, Throws.InstanceOf<RpcException>());
+            Assert.That(contest.Id, Is.EqualTo(1));
+            Assert.That(contest.StageId, Is.EqualTo(1000));
+            Assert.That(contest.Stage, Is.EqualTo(ContestStage.Preliminary));
+            Assert.That(contest.Problems, Is.Empty);
+
+            Assert.That(
+                action,
+                Throws.InstanceOf<RpcException>()
+                      .With.Property("StatusCode").EqualTo(StatusCode.AlreadyExists)
+                      .And.Message.Matches("The contest test Preliminary stage already exists")
+            );
         }
     }
 
     [Test]
     public async Task CreateContests_DuplicateStageId_ThrowsError()
     {
+        const string contestName = "test";
+        const long stageId = 1000;
+
         var client = Factory.CreateResultServiceClient();
 
         await client.AddContestAsync(
             new()
             {
-                StageId = 1000,
-                ContestName = "test",
+                StageId = stageId,
+                ContestName = contestName,
                 Stage = ContestStage.Preliminary
             }
         );
 
-        var contest1 = await client.GetContestAsync(
-                           new()
-                           {
-                               ContestName = "test",
-                               Stage = ContestStage.Preliminary
-                           }
-                       );
+        var contest = await client.GetContestAsync(
+                          new()
+                          {
+                              ContestName = contestName,
+                              Stage = ContestStage.Preliminary
+                          }
+                      );
 
         var action = async () => await client.AddContestAsync(
                                      new()
                                      {
-                                         StageId = 1000,
-                                         ContestName = "test",
+                                         StageId = stageId,
+                                         ContestName = contestName,
                                          Stage = ContestStage.Final
                                      }
                                  );
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(contest1.Id, Is.EqualTo(1));
-            Assert.That(contest1.StageId, Is.EqualTo(1000));
-            Assert.That(contest1.Stage, Is.EqualTo(ContestStage.Preliminary));
-            Assert.That(contest1.Problems, Is.Empty);
-            
-            Assert.That(action, Throws.InstanceOf<RpcException>());
+            Assert.That(contest.Id, Is.EqualTo(1));
+            Assert.That(contest.StageId, Is.EqualTo(stageId));
+            Assert.That(contest.Stage, Is.EqualTo(ContestStage.Preliminary));
+
+            Assert.That(
+                action,
+                Throws.InstanceOf<RpcException>()
+                      .With.Property("StatusCode").EqualTo(StatusCode.AlreadyExists)
+                      .And.Message.Matches($"The contest stage {stageId} already exists")
+            );
         }
     }
 }

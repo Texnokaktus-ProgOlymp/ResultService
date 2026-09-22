@@ -1,18 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <IsPackable>false</IsPackable>
-    </PropertyGroup>
-
     <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
-      <PackageReference Include="Microsoft.AspNetCore.TestHost" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
-      <PackageReference Include="NSubstitute" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+        <PackageReference Include="NSubstitute" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Texnokaktus.ProgOlymp.ResultService\Texnokaktus.ProgOlymp.ResultService.csproj" />
+        <ProjectReference Include="..\..\src\Texnokaktus.ProgOlymp.ResultService\Texnokaktus.ProgOlymp.ResultService.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Texnokaktus.ProgOlymp.ResultService.IntegrationTests.SetupGlobal" Static="True" />
     </ItemGroup>
 
 </Project>

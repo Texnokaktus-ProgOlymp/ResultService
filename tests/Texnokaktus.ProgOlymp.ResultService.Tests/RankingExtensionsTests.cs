@@ -3,7 +3,7 @@ using Texnokaktus.ProgOlymp.ResultService.Extensions;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Tests;
 
-public class RankingExtensionsTests
+public class RankingExtensionsTests : SetupBase
 {
     [Test]
     public void EmptySource_ReturnsEmptyResult([Values] bool condition)
@@ -19,7 +19,7 @@ public class RankingExtensionsTests
     public void DifferentValues_DifferentRanks()
     {
         List<int> source = [10, 5, 2];
-        
+
         var result = source.RankBy(_ => true, Comparer<int>.Default);
 
         List<RankedItem<int>> expected = [new(Rank: 1, Item: 10), new(Rank: 2, Item: 5), new(Rank: 3, Item: 2)];
@@ -30,7 +30,7 @@ public class RankingExtensionsTests
     public void SameValues_SameRank()
     {
         List<int> source = [10, 10, 10];
-        
+
         var result = source.RankBy(_ => true, Comparer<int>.Default);
 
         List<RankedItem<int>> expected = [new(Rank: 1, Item: 10), new(Rank: 1, Item: 10), new(Rank: 1, Item: 10)];
@@ -41,7 +41,7 @@ public class RankingExtensionsTests
     public void MixedValues_MixedRanks()
     {
         List<int> source = [10, 5, 5, 2];
-        
+
         var result = source.RankBy(_ => true, Comparer<int>.Default);
 
         List<RankedItem<int>> expected = [new(Rank: 1, Item: 10), new(Rank: 2, Item: 5), new(Rank: 2, Item: 5), new(Rank: 4, Item: 2)];
@@ -52,7 +52,7 @@ public class RankingExtensionsTests
     public void ContainsUnrankedItems_UnrankedInTheEnd()
     {
         List<int> source = [10, 5, 5, 2];
-        
+
         var result = source.RankBy(x => x % 2 == 0, Comparer<int>.Default);
 
         List<RankedItem<int>> expected = [new(Rank: 1, Item: 10), new(Rank: 2, Item: 2), new(Rank: null, Item: 5), new(Rank: null, Item: 5)];
