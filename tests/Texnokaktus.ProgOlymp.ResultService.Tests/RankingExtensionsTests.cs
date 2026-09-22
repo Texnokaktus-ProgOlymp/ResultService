@@ -3,7 +3,7 @@ using Texnokaktus.ProgOlymp.ResultService.Extensions;
 
 namespace Texnokaktus.ProgOlymp.ResultService.Tests;
 
-public class RankingExtensionsTests : SetupBase
+public class RankingExtensionsTests
 {
     [Test]
     public void EmptySource_ReturnsEmptyResult([Values] bool condition)

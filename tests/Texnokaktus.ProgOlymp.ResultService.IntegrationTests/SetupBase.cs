@@ -1,10 +1,8 @@
-using Allure.NUnit;
 using Microsoft.Extensions.DependencyInjection;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 
 namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
 
-[AllureNUnit]
 [NonParallelizable]
 public abstract class SetupBase
 {
