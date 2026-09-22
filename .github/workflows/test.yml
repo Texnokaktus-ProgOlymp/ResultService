@@ -68,7 +68,6 @@ jobs:
             --no-build \
             --verbosity normal \
             --collect:"XPlat Code Coverage" \
-            -- \
             --report-gh \
             --report-gh-history .test-history/history.json
 
