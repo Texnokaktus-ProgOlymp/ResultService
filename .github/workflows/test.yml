@@ -68,7 +68,7 @@ jobs:
             --no-build \
             --verbosity normal \
             --report-gh \
-            --report-gh-history .test-history/history.json
+            --report-gh-history .test-history/history.json \
             --coverage \
             --coverage-output-format cobertura \
             --coverage-output TestResults/coverage.cobertura.xml
