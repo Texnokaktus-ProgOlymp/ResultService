@@ -55,6 +55,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGrpcService<ResultServiceImpl>();
+app.MapGrpcService<ResultQueryingServiceImpl>();
 
 app.MapGroup("api")
    .MapResultEndpoints();
