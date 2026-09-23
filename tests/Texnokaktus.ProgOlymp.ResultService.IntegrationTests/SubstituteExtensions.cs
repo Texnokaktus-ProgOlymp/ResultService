@@ -23,7 +23,7 @@ public static class SubstituteExtensions
 
                            var participantGroups = _participants[new(request.ContestName)];
 
-                           var result = new GetContestParticipantsResponse
+                           return new GetContestParticipantsResponse
                            {
                                ParticipantGroups =
                                {
@@ -37,9 +37,7 @@ public static class SubstituteExtensions
                                        }
                                    )
                                }
-                           };
-
-                           return new(Task.FromResult(result), null!, null!, null!, null!, null!);
+                           }.ToAsyncUnaryCall();
                        }
                    );
         }
