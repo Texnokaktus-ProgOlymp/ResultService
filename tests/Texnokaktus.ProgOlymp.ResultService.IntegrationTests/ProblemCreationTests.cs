@@ -1,8 +1,5 @@
 using Grpc.Core;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
-using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 
 namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
 
@@ -42,14 +39,10 @@ public class ProblemCreationTests : SetupBase
 
         var client = Factory.CreateResultServiceClient();
 
-        await client.AddContestAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                StageId = 1000
-            }
-        );
+        await DataBuilder
+             .ForClient(client)
+             .AddContestStage(contestName, contestStage, 1000)
+             .BuildAsync();
 
         await client.AddProblemAsync(
             new()
@@ -99,22 +92,15 @@ public class ProblemCreationTests : SetupBase
 
         var client = Factory.CreateResultServiceClient();
 
-        await client.AddContestAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                StageId = 1000
-            }
-        );
-
-        await using (var scope = Factory.Services.CreateAsyncScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var contestResult = await context.ContestResults.SingleAsync(result => result.Id == 1);
-            contestResult.Published = true;
-            await context.SaveChangesAsync();
-        }
+        await DataBuilder
+             .ForClient(client)
+             .AddContestStage(
+                  contestName,
+                  contestStage,
+                  1000,
+                  contestStageBuilder => contestStageBuilder.MarkPublished()
+              )
+             .BuildAsync();
 
         var action = async () => await client.AddProblemAsync(
                                      new()
@@ -143,24 +129,15 @@ public class ProblemCreationTests : SetupBase
 
         var client = Factory.CreateResultServiceClient();
 
-        await client.AddContestAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                StageId = 1000
-            }
-        );
-
-        await client.AddProblemAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                Alias = alias,
-                Name = "Test Problem"
-            }
-        );
+        await DataBuilder
+             .ForClient(client)
+             .AddContestStage(
+                  contestName,
+                  contestStage,
+                  1000,
+                  contestStageBuilder => contestStageBuilder.AddProblem(alias, "Test Problem")
+              )
+             .BuildAsync();
 
         var action = async () => await client.AddProblemAsync(
                                      new()

@@ -63,14 +63,10 @@ public class ContestCreationTests : SetupBase
     {
         var client = Factory.CreateResultServiceClient();
 
-        await client.AddContestAsync(
-            new()
-            {
-                StageId = 1000,
-                ContestName = "test",
-                Stage = ContestStage.Preliminary
-            }
-        );
+        await DataBuilder
+             .ForClient(client)
+             .AddContestStage("test", ContestStage.Preliminary, 1000)
+             .BuildAsync();
 
         var contest = await client.GetContestAsync(
                           new()
@@ -113,14 +109,10 @@ public class ContestCreationTests : SetupBase
 
         var client = Factory.CreateResultServiceClient();
 
-        await client.AddContestAsync(
-            new()
-            {
-                StageId = stageId,
-                ContestName = contestName,
-                Stage = ContestStage.Preliminary
-            }
-        );
+        await DataBuilder
+             .ForClient(client)
+             .AddContestStage(contestName, ContestStage.Preliminary, stageId)
+             .BuildAsync();
 
         var contest = await client.GetContestAsync(
                           new()

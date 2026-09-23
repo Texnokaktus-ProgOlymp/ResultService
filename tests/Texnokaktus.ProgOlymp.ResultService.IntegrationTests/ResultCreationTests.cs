@@ -1,8 +1,5 @@
 using Grpc.Core;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
-using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
 
 namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
 
@@ -44,14 +41,10 @@ public class ResultCreationTests : SetupBase
 
         var client = Factory.CreateResultServiceClient();
 
-        await client.AddContestAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                StageId = 1000
-            }
-        );
+        await DataBuilder
+             .ForClient(client)
+             .AddContestStage(contestName, contestStage, 1000)
+             .BuildAsync();
 
         var action = async () => await client.AddResultAsync(
                                      new()
@@ -81,22 +74,15 @@ public class ResultCreationTests : SetupBase
 
         var client = Factory.CreateResultServiceClient();
 
-        await client.AddContestAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                StageId = 1000
-            }
-        );
-
-        await using (var scope = Factory.Services.CreateAsyncScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var contestResult = await context.ContestResults.SingleAsync(result => result.Id == 1);
-            contestResult.Published = true;
-            await context.SaveChangesAsync();
-        }
+        await DataBuilder
+             .ForClient(client)
+             .AddContestStage(
+                  contestName,
+                  contestStage,
+                  1000,
+                  contestStageBuilder => contestStageBuilder.MarkPublished()
+              )
+             .BuildAsync();
 
         var action = async () => await client.AddResultAsync(
                                      new()
@@ -127,35 +113,19 @@ public class ResultCreationTests : SetupBase
 
         var client = Factory.CreateResultServiceClient();
 
-        await client.AddContestAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                StageId = 1000
-            }
-        );
-
-        await client.AddProblemAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                Alias = problemAlias,
-                Name = "Test Problem"
-            }
-        );
-
-        await client.AddResultAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                Alias = problemAlias,
-                ParticipantId = participantId,
-                BaseScore = 100m
-            }
-        );
+        await DataBuilder
+             .ForClient(client)
+             .AddContestStage(
+                  contestName,
+                  contestStage,
+                  1000,
+                  contestStageBuilder => contestStageBuilder.AddProblem(
+                      problemAlias,
+                      "Test Problem",
+                      problemBuilder => problemBuilder.AddResult(participantId, 100m)
+                  )
+              )
+             .BuildAsync();
 
         var action = async () => await client.AddResultAsync(
                                      new()
@@ -186,24 +156,15 @@ public class ResultCreationTests : SetupBase
 
         var client = Factory.CreateResultServiceClient();
 
-        await client.AddContestAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                StageId = 1000
-            }
-        );
-
-        await client.AddProblemAsync(
-            new()
-            {
-                ContestName = contestName,
-                Stage = contestStage,
-                Alias = problemAlias,
-                Name = "Test Problem"
-            }
-        );
+        await DataBuilder
+             .ForClient(client)
+             .AddContestStage(
+                  contestName,
+                  contestStage,
+                  1000,
+                  contestStageBuilder => contestStageBuilder.AddProblem(problemAlias, "Test Problem")
+              )
+             .BuildAsync();
 
         await client.AddResultAsync(
             new()
