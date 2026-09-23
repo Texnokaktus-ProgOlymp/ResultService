@@ -17,6 +17,8 @@ public abstract class SetupBase
     [TearDown]
     public async Task TearDown()
     {
+        SubstituteExtensions.Participants.Clear();
+
         await using var scope = Factory.Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await dbContext.Database.EnsureDeletedAsync();

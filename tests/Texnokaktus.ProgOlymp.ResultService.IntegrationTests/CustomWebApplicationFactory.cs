@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Participants;
 using Texnokaktus.ProgOlymp.ResultService.DataAccess.Context;
+using GRPC = Texnokaktus.ProgOlymp.Common.Contracts.Grpc;
 
 namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
 
@@ -45,6 +46,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
                     services.RemoveAll<ParticipantService.ParticipantServiceClient>();
                     services.AddSingleton(ParticipantServiceClientMock);
+
+                    SubstituteExtensions.Participants.Init(ParticipantServiceClientMock);
                 }
             )
            .ConfigureLogging(loggingBuilder =>
@@ -59,7 +62,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         base.ConfigureWebHost(builder);
     }
 
-    public Common.Contracts.Grpc.Results.ResultService.ResultServiceClient CreateResultServiceClient() => new(CreateGrpcChannel());
+    public GRPC.Results.ResultService.ResultServiceClient CreateResultServiceClient() => new(CreateGrpcChannel());
+
+    public GRPC.Results.ResultQueryingService.ResultQueryingServiceClient CreateResultQueryingServiceClient() => new(CreateGrpcChannel());
 
     private GrpcChannel CreateGrpcChannel()
     {
