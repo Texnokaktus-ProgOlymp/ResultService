@@ -1,4 +1,5 @@
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
+using Texnokaktus.ProgOlymp.ResultService.IntegrationTests.Data;
 
 namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
 
@@ -27,7 +28,12 @@ public class ResultQueryingTests : SetupBase
                                         .AddProblem(
                                              "B",
                                              "Test Problem 2",
-                                             problemBuilder => problemBuilder.AddResult(1, 40m)
+                                             problemBuilder => problemBuilder.AddResult(
+                                                 1,
+                                                 40m,
+                                                 resultBuilder => resultBuilder.AddAdjustment(10m, "Test comment")
+                                                                               .AddAdjustment(-2m)
+                                             )
                                          )
                                         .AddProblem(
                                              "C",
@@ -68,26 +74,27 @@ public class ResultQueryingTests : SetupBase
             Assert.That(
                 results.Problems,
                 Is.EquivalentTo(
-                    [
-                        new Problem()
+                    new List<Problem>
+                    {
+                        new()
                         {
                             Id = 1,
                             Alias = "A",
                             Name = "Test Problem 1"
                         },
-                        new Problem()
+                        new()
                         {
                             Id = 2,
                             Alias = "B",
                             Name = "Test Problem 2"
                         },
-                        new Problem()
+                        new()
                         {
                             Id = 3,
                             Alias = "C",
                             Name = "Test Problem 3"
                         }
-                    ]
+                    }
                 )
             );
 
@@ -104,7 +111,7 @@ public class ResultQueryingTests : SetupBase
                                 {
                                     Place = 1,
                                     ParticipantId = 1,
-                                    TotalScore = 140m,
+                                    TotalScore = 148m,
                                     IsDisqualified = false,
                                     Results =
                                     {
@@ -123,7 +130,23 @@ public class ResultQueryingTests : SetupBase
                                             Score = new()
                                             {
                                                 BaseScore = 40m,
-                                                TotalScore = 40m
+                                                Adjustments =
+                                                {
+                                                    new ScoreAdjustment
+                                                    {
+                                                        Id = 1,
+                                                        Adjustment = 10m,
+                                                        Comment = "Test comment"
+                                                    },
+                                                    new ScoreAdjustment
+                                                    {
+                                                        Id = 2,
+                                                        Adjustment = -2m,
+                                                        Comment = null
+                                                    }
+                                                },
+                                                AdjustmentsSum = 8m,
+                                                TotalScore = 48m
                                             }
                                         },
                                         new ProblemResult

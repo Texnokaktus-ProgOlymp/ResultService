@@ -1,5 +1,6 @@
 ﻿using Grpc.Core;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
+using Texnokaktus.ProgOlymp.ResultService.IntegrationTests.Data;
 
 namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
 
