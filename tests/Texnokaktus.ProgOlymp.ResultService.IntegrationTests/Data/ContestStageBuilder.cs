@@ -14,6 +14,7 @@ internal class ContestStageBuilder : IDataBuilder, IContestStageBuilder
     private readonly Dictionary<string, ProblemBuilder> _childBuilders;
 
     private bool _isPublished;
+    private readonly Dictionary<int, string?> _disqualifications = [];
 
     public ContestStageBuilder(
         Common.Contracts.Grpc.Results.ResultService.ResultServiceClient client,
@@ -47,6 +48,12 @@ internal class ContestStageBuilder : IDataBuilder, IContestStageBuilder
         return this;
     }
 
+    public IContestStageBuilder DisqualifyParticipant(int participantId, string? reason = null)
+    {
+        _disqualifications[participantId] = reason;
+        return this;
+    }
+
     public async Task BuildAsync()
     {
         await _client.AddContestAsync(
@@ -61,12 +68,26 @@ internal class ContestStageBuilder : IDataBuilder, IContestStageBuilder
         foreach (var (_, problemBuilder) in _childBuilders)
             await problemBuilder.BuildAsync();
 
-        if (_isPublished)
+        if (_isPublished || _disqualifications.Count > 0)
         {
             await using var scope = Factory.Services.CreateAsyncScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var contestResult = await context.ContestResults.SingleAsync(result => result.Id == 1);
-            contestResult.Published = true;
+            var stage = _contestStage switch
+            {
+                ContestStage.Preliminary => DataAccess.Entities.ContestStage.Preliminary,
+                ContestStage.Final => DataAccess.Entities.ContestStage.Final,
+                _ => throw new ArgumentOutOfRangeException(nameof(_contestStage))
+            };
+            var contestResult = await context.ContestResults.SingleAsync(result => result.ContestName == _contestName
+                                                                               && result.Stage == stage);
+            contestResult.Published = _isPublished;
+            foreach (var (participantId, reason) in _disqualifications)
+                context.Set<DataAccess.Entities.DisqualificationNote>().Add(new()
+                {
+                    ContestResultId = contestResult.Id,
+                    ParticipantId = participantId,
+                    Reason = reason
+                });
             await context.SaveChangesAsync();
         }
     }

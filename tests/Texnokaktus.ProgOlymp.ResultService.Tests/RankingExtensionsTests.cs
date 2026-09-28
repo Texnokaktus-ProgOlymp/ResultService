@@ -74,4 +74,26 @@ public class RankingExtensionsTests
 
         IEnumerable<RankedItem<int>> Action() => [.. source.RankBy(_ => true, Comparer<int>.Default)];
     }
+
+    [TestCase(1)]
+    [TestCase(2)]
+    public void AllItemsUnranked_AllRanksAreNull(int count)
+    {
+        var source = Enumerable.Range(1, count).Reverse().ToArray();
+
+        var result = source.RankBy(_ => false, Comparer<int>.Default);
+
+        Assert.That(result, Is.EqualTo(source.Select(item => new RankedItem<int>(null, item))));
+    }
+
+    [Test]
+    public void FirstItemsUnranked_RankingStartsAtFirstEligibleItem()
+    {
+        int[] source = [11, 9, 8, 8, 7, 4];
+
+        var result = source.RankBy(item => item % 2 == 0, Comparer<int>.Default);
+
+        RankedItem<int>[] expected = [new(1, 8), new(1, 8), new(3, 4), new(null, 11), new(null, 9), new(null, 7)];
+        Assert.That(result, Is.EqualTo(expected));
+    }
 }

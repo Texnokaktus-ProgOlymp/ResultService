@@ -4,4 +4,5 @@ internal interface IContestStageBuilder
 {
     IContestStageBuilder AddProblem(string alias, string name, Action<IProblemBuilder>? builderAction = null);
     IContestStageBuilder MarkPublished(bool value = true);
+    IContestStageBuilder DisqualifyParticipant(int participantId, string? reason = null);
 }
