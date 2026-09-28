@@ -1,4 +1,5 @@
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
+using Texnokaktus.ProgOlymp.ResultService.IntegrationTests.Assertions;
 using Texnokaktus.ProgOlymp.ResultService.IntegrationTests.Data;
 
 namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
@@ -69,102 +70,26 @@ public class ResultQueryingTests : SetupBase
                           }
                       );
 
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(
-                results.Problems,
-                Is.EquivalentTo(
-                    new List<Problem>
-                    {
-                        new()
-                        {
-                            Id = 1,
-                            Alias = "A",
-                            Name = "Test Problem 1"
-                        },
-                        new()
-                        {
-                            Id = 2,
-                            Alias = "B",
-                            Name = "Test Problem 2"
-                        },
-                        new()
-                        {
-                            Id = 3,
-                            Alias = "C",
-                            Name = "Test Problem 3"
-                        }
-                    }
-                )
-            );
-
-            Assert.That(
-                results.ResultGroups,
-                Is.EquivalentTo(
+        ContestResultsAssert.Matches(
+            results,
+            new(
+                [
+                    new(1, "A", "Test Problem 1"),
+                    new(2, "B", "Test Problem 2"),
+                    new(3, "C", "Test Problem 3")
+                ],
+                [
+                    new("Default",
                     [
-                        new ResultGroup
-                        {
-                            Name = "Default",
-                            Rows =
-                            {
-                                new ResultRow
-                                {
-                                    Place = 1,
-                                    ParticipantId = 1,
-                                    TotalScore = 148m,
-                                    IsDisqualified = false,
-                                    Results =
-                                    {
-                                        new ProblemResult
-                                        {
-                                            ProblemId = 1,
-                                            Score = new()
-                                            {
-                                                BaseScore = 20m,
-                                                TotalScore = 20m
-                                            }
-                                        },
-                                        new ProblemResult
-                                        {
-                                            ProblemId = 2,
-                                            Score = new()
-                                            {
-                                                BaseScore = 40m,
-                                                Adjustments =
-                                                {
-                                                    new ScoreAdjustment
-                                                    {
-                                                        Id = 1,
-                                                        Adjustment = 10m,
-                                                        Comment = "Test comment"
-                                                    },
-                                                    new ScoreAdjustment
-                                                    {
-                                                        Id = 2,
-                                                        Adjustment = -2m,
-                                                        Comment = null
-                                                    }
-                                                },
-                                                AdjustmentsSum = 8m,
-                                                TotalScore = 48m
-                                            }
-                                        },
-                                        new ProblemResult
-                                        {
-                                            ProblemId = 3,
-                                            Score = new()
-                                            {
-                                                BaseScore = 80m,
-                                                TotalScore = 80m
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                )
-            );
-        }
+                        new(ParticipantId: 1, Place: 1, Results:
+                        [
+                            new(1, 20m),
+                            new(2, 40m, new(1, 10m, "Test comment"), new(2, -2m)),
+                            new(3, 80m)
+                        ])
+                    ])
+                ]
+            )
+        );
     }
 }
