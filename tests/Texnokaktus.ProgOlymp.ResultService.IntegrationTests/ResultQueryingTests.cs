@@ -1,3 +1,4 @@
+using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
@@ -10,6 +11,103 @@ namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
 
 public class ResultQueryingTests : SetupBase
 {
+    [TestCase("missing", ContestStage.Preliminary)]
+    [TestCase("test", ContestStage.Final)]
+    public async Task MissingContestOrStage_ReturnsNotFound(string contestName, ContestStage stage)
+    {
+        await DataBuilder.ForClient(Factory.CreateResultServiceClient())
+            .AddContestStage("test", ContestStage.Preliminary, 1000)
+            .BuildAsync();
+
+        var client = Factory.CreateResultQueryingServiceClient();
+        var action = async () => await client.GetResultsAsync(new() { ContestName = contestName, Stage = stage });
+
+        await Assert.ThatAsync(action, Throws.TypeOf<RpcException>()
+            .With.Property(nameof(RpcException.StatusCode)).EqualTo(StatusCode.NotFound)
+            .And.Property(nameof(RpcException.Status)).Property(nameof(Status.Detail))
+            .EqualTo($"The contest {contestName} {stage} stage was not found"));
+    }
+
+    [Test]
+    public async Task StageWithoutProblems_ReturnsEmptyProblemsAndRows()
+    {
+        await AssertResultsAsync(_ => { }, [("Default", [1])], [], [new("Default", [])]);
+    }
+
+    [Test]
+    public async Task ProblemsWithoutResults_ReturnsProblemsAndEmptyRows()
+    {
+        await AssertResultsAsync(stage => stage.AddProblem("A", "Problem A"),
+            [("Default", [1])], [new(1, "A", "Problem A")], [new("Default", [])]);
+    }
+
+    [Test]
+    public async Task NoParticipantGroups_ReturnsProblemsWithoutGroups()
+    {
+        await AssertResultsAsync(stage => stage.AddProblem("A", "Problem A", problem => problem.AddResult(1, 100m)),
+            [], [new(1, "A", "Problem A")], []);
+    }
+
+    [Test]
+    public async Task EmptyParticipantGroup_IsPreserved()
+    {
+        SubstituteExtensions.Participants.SubstituteGroup("test", "Empty");
+
+        await AssertResultsAsync(stage => stage.AddProblem("A", "Problem A", problem => problem.AddResult(1, 50m)),
+            [("Default", [1])], [new(1, "A", "Problem A")],
+            [new("Empty", []), new("Default", [new(1, 1, [new(1, 50m)])])]);
+    }
+
+    [Test]
+    public async Task ResultWithoutRegisteredParticipant_DoesNotAffectRowsOrPlaces()
+    {
+        await AssertResultsAsync(stage => stage.AddProblem("A", "Problem A", problem => problem
+                .AddResult(1, 50m).AddResult(2, 200m)),
+            [("Default", [1])], [new(1, "A", "Problem A")],
+            [new("Default", [new(1, 1, [new(1, 50m)])])]);
+    }
+
+    [Test]
+    public async Task ProblemsCreatedOutOfOrder_AreReturnedInAliasOrder()
+    {
+        await DataBuilder.ForClient(Factory.CreateResultServiceClient())
+            .AddContestStage("test", ContestStage.Preliminary, 1000, stage => stage
+                .AddProblem("C", "Problem C", problem => problem.AddResult(1, 30m))
+                .AddProblem("A", "Problem A", problem => problem.AddResult(1, 10m))
+                .AddProblem("B", "Problem B"))
+            .BuildAsync();
+        SubstituteParticipant("Default", 1);
+
+        var results = await Factory.CreateResultQueryingServiceClient().GetResultsAsync(new()
+        {
+            ContestName = "test",
+            Stage = ContestStage.Preliminary
+        });
+
+        ContestResultsAssert.Matches(results, new(
+            [new(2, "A", "Problem A"), new(3, "B", "Problem B"), new(1, "C", "Problem C")],
+            [new("Default", [new(1, 1, [new(2, 10m), new(3, null), new(1, 30m)])])]));
+        Assert.That(results.Problems.Select(problem => problem.Alias), Is.EqualTo(new[] { "A", "B", "C" }));
+    }
+
+    [Test]
+    public async Task FractionalAndNegativeTotals_ArePreservedAndRanked()
+    {
+        await AssertResultsAsync(stage => stage.AddProblem("A", "Problem A", problem => problem
+                .AddResult(1, 0.10m, result => result.AddAdjustment(0.20m))
+                .AddResult(2, 0.30m)
+                .AddResult(3, 0m, result => result.AddAdjustment(-0.01m))
+                .AddResult(4, 999.99m, result => result.AddAdjustment(-999.99m))
+                .AddResult(5, 999.98m)),
+            [("Default", [3, 4, 2, 5, 1])], [new(1, "A", "Problem A")],
+            [new("Default", [
+                new(5, 1, [new(1, 999.98m)]),
+                new(2, 2, [new(1, 0.30m)]),
+                new(1, 2, [new(1, 0.10m, [new(1, 0.20m)])]),
+                new(4, 4, [new(1, 999.99m, [new(3, -999.99m)])]),
+                new(3, 5, [new(1, 0m, [new(2, -0.01m)])])])]);
+    }
+
     [Test]
     public async Task EqualTotals_SharePlacesAndSkipFollowingPlaces()
     {

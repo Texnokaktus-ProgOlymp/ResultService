@@ -21,7 +21,7 @@ public static class SubstituteExtensions
                        {
                            var request = info.Arg<GetContestParticipantsRequest>();
 
-                           var participantGroups = _participants[new(request.ContestName)];
+                           var participantGroups = _participants.GetValueOrDefault(new(request.ContestName), []);
 
                            return new GetContestParticipantsResponse
                            {
@@ -44,19 +44,19 @@ public static class SubstituteExtensions
 
         public void SubstituteParticipant(string contestName, string participantGroupName, Participant participant)
         {
+            SubstituteGroup(contestName, participantGroupName);
+            _participants[new(contestName)][participantGroupName].Add(participant);
+        }
+
+        public void SubstituteGroup(string contestName, string participantGroupName)
+        {
             if (!_participants.TryGetValue(new(contestName), out var contestParticipants))
             {
                 contestParticipants = new();
                 _participants.Add(new(contestName), contestParticipants);
             }
 
-            if (!contestParticipants.TryGetValue(participantGroupName, out var participants))
-            {
-                participants = [];
-                contestParticipants.Add(participantGroupName, participants);
-            }
-
-            participants.Add(participant);
+            contestParticipants.TryAdd(participantGroupName, []);
         }
 
         public void Clear() => _participants.Clear();
