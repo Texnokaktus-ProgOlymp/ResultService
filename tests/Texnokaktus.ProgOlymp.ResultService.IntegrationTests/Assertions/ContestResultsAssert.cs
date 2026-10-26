@@ -9,17 +9,33 @@ internal static class ContestResultsAssert
     {
         using var scope = Assert.EnterMultipleScope();
 
-        AssertUnordered(actual.Problems, expected.Problems, problem => problem.Id, problem => problem.Id,
-            (problem, reference, path) =>
-            {
-                Assert.That(problem.Alias, Is.EqualTo(reference.Alias), $"{path}.Alias");
-                Assert.That(problem.Name, Is.EqualTo(reference.Name), $"{path}.Name");
-            }, "Problems");
+        AssertProblems(actual.Problems, expected.Problems);
 
         AssertUnordered(actual.ResultGroups, expected.ResultGroups, group => group.Name, group => group.Name,
             (group, reference, path) => AssertOrdered(group.Rows, reference.Rows, AssertRow, $"{path}.Rows"),
             "ResultGroups");
     }
+
+    public static void Matches(ParticipantResults actual, IReadOnlyList<ExpectedProblem> problems,
+        string groupName, ExpectedResultRow expected)
+    {
+        using var scope = Assert.EnterMultipleScope();
+
+        AssertProblems(actual.Problems, problems);
+        Assert.That(actual.ResultGroupName, Is.EqualTo(groupName), "ResultGroupName");
+        Assert.That(actual.Place, Is.EqualTo(expected.Place), "Place");
+        Assert.That(actual.IsDisqualified, Is.EqualTo(expected.IsDisqualified), "IsDisqualified");
+        Assert.That((decimal?)actual.TotalScore, Is.EqualTo(expected.TotalScore), "TotalScore");
+        AssertOrdered(actual.Results, expected.Results, AssertProblemResult, "Results");
+    }
+
+    private static void AssertProblems(IReadOnlyList<Problem> actual, IReadOnlyList<ExpectedProblem> expected) =>
+        AssertUnordered(actual, expected, problem => problem.Id, problem => problem.Id,
+            (problem, reference, path) =>
+            {
+                Assert.That(problem.Alias, Is.EqualTo(reference.Alias), $"{path}.Alias");
+                Assert.That(problem.Name, Is.EqualTo(reference.Name), $"{path}.Name");
+            }, "Problems");
 
     private static void AssertRow(ResultRow actual, ExpectedResultRow expected, string path)
     {

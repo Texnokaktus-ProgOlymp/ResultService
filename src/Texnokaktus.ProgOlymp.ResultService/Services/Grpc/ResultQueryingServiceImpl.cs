@@ -96,7 +96,8 @@ public class ResultQueryingServiceImpl(IResultService resultService) : ResultQue
                               Score = result.Score?.MapResultScore()
                           })
             },
-            TotalScore = resultRow.Row.Item.TotalScore
+            TotalScore = resultRow.Row.Item.TotalScore,
+            IsDisqualified = resultRow.Row.Item.DisqualificationNote is not null
         };
     }
 }
