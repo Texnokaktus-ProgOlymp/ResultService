@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Grpc.Net.Client;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -48,6 +49,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                     services.AddSingleton(ParticipantServiceClientMock);
 
                     SubstituteExtensions.Participants.Init(ParticipantServiceClientMock);
+                    services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, TestJwtTokens.Configure);
                 }
             )
            .ConfigureLogging(loggingBuilder =>
@@ -67,6 +69,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     public GRPC.Results.ResultService.ResultServiceClient CreateResultServiceClient() => new(CreateGrpcChannel());
 
     public GRPC.Results.ResultQueryingService.ResultQueryingServiceClient CreateResultQueryingServiceClient() => new(CreateGrpcChannel());
+
+    public HttpClient CreateAuthenticatedClient(int userId)
+    {
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", TestJwtTokens.Create(userId));
+        return client;
+    }
 
     private GrpcChannel CreateGrpcChannel()
     {

@@ -1,3 +1,4 @@
+using Grpc.Core;
 using NSubstitute;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Participants;
 
@@ -10,6 +11,7 @@ public static class SubstituteExtensions
     public sealed class ParticipantSubstitution
     {
         private readonly Dictionary<ContestStageKey, Dictionary<string, List<Participant>>> _participants = new();
+        private readonly Dictionary<(string ContestName, int UserId), int> _participantIds = new();
 
         public void Init(ParticipantService.ParticipantServiceClient client)
         {
@@ -40,6 +42,15 @@ public static class SubstituteExtensions
                            }.ToAsyncUnaryCall();
                        }
                    );
+
+            client.GetParticipantIdAsync(Arg.Any<GetParticipantIdRequest>(), cancellationToken: Arg.Any<CancellationToken>())
+                .Returns(info =>
+                {
+                    var request = info.Arg<GetParticipantIdRequest>();
+                    return _participantIds.TryGetValue((request.ContestName, request.UserId), out var participantId)
+                        ? new GetParticipantIdResponse { ParticipantId = participantId }.ToAsyncUnaryCall()
+                        : throw new RpcException(new(StatusCode.NotFound, "Participant not found"));
+                });
         }
 
         public void SubstituteParticipant(string contestName, string participantGroupName, Participant participant)
@@ -59,7 +70,14 @@ public static class SubstituteExtensions
             contestParticipants.TryAdd(participantGroupName, []);
         }
 
-        public void Clear() => _participants.Clear();
+        public void SubstituteParticipantId(string contestName, int userId, int participantId) =>
+            _participantIds[(contestName, userId)] = participantId;
+
+        public void Clear()
+        {
+            _participants.Clear();
+            _participantIds.Clear();
+        }
 
         private readonly record struct ContestStageKey(string ContestName);
     }
