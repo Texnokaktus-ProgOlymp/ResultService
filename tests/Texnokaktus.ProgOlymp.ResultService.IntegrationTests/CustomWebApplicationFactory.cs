@@ -52,6 +52,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             )
            .ConfigureLogging(loggingBuilder =>
                 {
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.AddConsole();
                     loggingBuilder.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
                 }
             );
