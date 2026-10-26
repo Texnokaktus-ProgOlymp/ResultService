@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Texnokaktus.ProgOlymp.Identity.Extensions;
 using Texnokaktus.ProgOlymp.ResultService.Domain;
+using Texnokaktus.ProgOlymp.ResultService.Endpoints.Filters;
 using Texnokaktus.ProgOlymp.ResultService.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Models;
 using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
@@ -19,7 +20,9 @@ public static class ResultEndpoints
     public static IEndpointRouteBuilder MapResultEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/contests/{contestName}/{stage}/results")
-                       .WithTags("Results");
+                       .WithTags("Results")
+                       .AddEndpointFilterFactory(EnumValidationFilter.Create)
+                       .ProducesValidationProblem();
 
         group.MapGet("/",
                      async Task<Results<Ok<ContestResults>, NotFound>> (string contestName, Models.ContestStage stage, IResultService resultService, CancellationToken cancellationToken) =>
