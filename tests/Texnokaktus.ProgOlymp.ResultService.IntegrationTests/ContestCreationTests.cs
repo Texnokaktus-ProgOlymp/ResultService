@@ -102,8 +102,9 @@ public class ContestCreationTests : SetupBase
         }
     }
 
-    [Test]
-    public async Task CreateContests_DuplicateStageId_ThrowsError()
+    [TestCase("test", ContestStage.Final)]
+    [TestCase("other", ContestStage.Preliminary)]
+    public async Task CreateContests_DuplicateStageId_ThrowsError(string duplicateContestName, ContestStage duplicateStage)
     {
         const string contestName = "test";
         const long stageId = 1000;
@@ -127,8 +128,8 @@ public class ContestCreationTests : SetupBase
                                      new()
                                      {
                                          StageId = stageId,
-                                         ContestName = contestName,
-                                         Stage = ContestStage.Final
+                                         ContestName = duplicateContestName,
+                                         Stage = duplicateStage
                                      }
                                  );
 

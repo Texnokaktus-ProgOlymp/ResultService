@@ -1,11 +1,67 @@
 using Grpc.Core;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
+using Texnokaktus.ProgOlymp.ResultService.IntegrationTests.Assertions;
 using Texnokaktus.ProgOlymp.ResultService.IntegrationTests.Data;
+using Texnokaktus.ProgOlymp.ResultService.IntegrationTests.Models;
 
 namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
 
 public class ResultAdjustmentCreationTests : SetupBase
 {
+    [Test]
+    public async Task SubsequentAdjustments_ChangeLeaderCreateTieAndBreakTie()
+    {
+        var client = Factory.CreateResultServiceClient();
+        await DataBuilder.ForClient(client)
+            .AddContestStage("test", ContestStage.Preliminary, 1000, stage => stage
+                .AddProblem("A", "Problem A", problem => problem.AddResult(1, 100m).AddResult(2, 90m)))
+            .BuildAsync();
+        foreach (var id in new[] { 1, 2 })
+            SubstituteExtensions.Participants.SubstituteParticipant("test", "Default", new()
+            {
+                Id = id,
+                Grade = 11,
+                Name = new() { FirstName = $"Participant {id}", LastName = "Test" }
+            });
+
+        var queryingClient = Factory.CreateResultQueryingServiceClient();
+        await AssertRowsAsync([new(1, 1, [new(1, 100m)]), new(2, 2, [new(1, 90m)])]);
+
+        var first = await AddAdjustmentAsync(2, 20m, "Appeal");
+        Assert.That(first.Id, Is.EqualTo(1));
+        await AssertRowsAsync([
+            new(2, 1, [new(1, 90m, [new(1, 20m, "Appeal")])]), new(1, 2, [new(1, 100m)])]);
+
+        var second = await AddAdjustmentAsync(1, 10m);
+        Assert.That(second.Id, Is.EqualTo(2));
+        await AssertRowsAsync([
+            new(1, 1, [new(1, 100m, [new(2, 10m)])]),
+            new(2, 1, [new(1, 90m, [new(1, 20m, "Appeal")])])]);
+
+        var third = await AddAdjustmentAsync(1, -20m, "Correction");
+        Assert.That(third.Id, Is.EqualTo(3));
+        await AssertRowsAsync([
+            new(2, 1, [new(1, 90m, [new(1, 20m, "Appeal")])]),
+            new(1, 2, [new(1, 100m, new(2, 10m), new(3, -20m, "Correction"))])]);
+
+        async Task AssertRowsAsync(ExpectedResultRow[] rows)
+        {
+            var results = await queryingClient.GetResultsAsync(new() { ContestName = "test", Stage = ContestStage.Preliminary });
+            ContestResultsAssert.Matches(results, new([new(1, "A", "Problem A")], [new("Default", rows)]));
+        }
+
+        async Task<AddResultAdjustmentResponse> AddAdjustmentAsync(int participantId, decimal adjustment, string? comment = null) =>
+            await client.AddResultAdjustmentAsync(new()
+            {
+                ContestName = "test",
+                Stage = ContestStage.Preliminary,
+                Alias = "A",
+                ParticipantId = participantId,
+                Adjustment = adjustment,
+                Comment = comment
+            });
+    }
+
     [Test]
     public async Task CreateResultAdjustment_MissingContest_ThrowsError()
     {
@@ -43,7 +99,8 @@ public class ResultAdjustmentCreationTests : SetupBase
         var client = Factory.CreateResultServiceClient();
 
         await DataBuilder
-             .ForClient(client).AddContestStage(contestName, contestStage, 1000)
+             .ForClient(client).AddContestStage(contestName, contestStage, 1000,
+                  stage => stage.AddProblem("B", "Other problem", problem => problem.AddResult(1, 50m)))
              .BuildAsync();
 
         var action = async () => await client.AddResultAdjustmentAsync(
@@ -119,7 +176,8 @@ public class ResultAdjustmentCreationTests : SetupBase
                   contestName,
                   contestStage,
                   1000,
-                  contestStageBuilder => contestStageBuilder.AddProblem(problemAlias, "Test Problem")
+                  contestStageBuilder => contestStageBuilder.AddProblem(problemAlias, "Test Problem",
+                      problem => problem.AddResult(2, 50m))
               )
              .BuildAsync();
 

@@ -44,7 +44,8 @@ public class ResultCreationTests : SetupBase
 
         await DataBuilder
              .ForClient(client)
-             .AddContestStage(contestName, contestStage, 1000)
+             .AddContestStage(contestName, contestStage, 1000,
+                  stage => stage.AddProblem("B", "Other problem", problem => problem.AddResult(1, 50m)))
              .BuildAsync();
 
         var action = async () => await client.AddResultAsync(
