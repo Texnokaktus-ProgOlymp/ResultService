@@ -10,6 +10,8 @@ using Texnokaktus.ProgOlymp.ResultService.Infrastructure;
 using Texnokaktus.ProgOlymp.ResultService.Services;
 using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Services.Grpc;
+using Texnokaktus.ProgOlymp.ResultService.Services.Grpc.Interceptors;
+using Texnokaktus.ProgOlymp.ResultService.Validation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +30,9 @@ builder.Services.AddOpenApi(options => options.AddSchemaTransformer<SchemaTransf
 
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-builder.Services.AddGrpc();
+builder.Services.AddRequestValidation();
+
+builder.Services.AddGrpc(options => options.Interceptors.Add<RequestValidationInterceptor>());
 builder.Services.AddGrpcReflection();
 
 builder.Services

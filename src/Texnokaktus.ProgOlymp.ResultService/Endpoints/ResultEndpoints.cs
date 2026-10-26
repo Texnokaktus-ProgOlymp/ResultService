@@ -4,6 +4,7 @@ using Texnokaktus.ProgOlymp.ResultService.Domain;
 using Texnokaktus.ProgOlymp.ResultService.Endpoints.Filters;
 using Texnokaktus.ProgOlymp.ResultService.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.ResultService.Models;
+using Texnokaktus.ProgOlymp.ResultService.Models.Requests;
 using Texnokaktus.ProgOlymp.ResultService.Services.Abstractions;
 using ContestResults = Texnokaktus.ProgOlymp.ResultService.Models.ContestResults;
 using ContestStage = Texnokaktus.ProgOlymp.ResultService.DataAccess.Entities.ContestStage;
@@ -21,13 +22,13 @@ public static class ResultEndpoints
     {
         var group = app.MapGroup("/contests/{contestName}/{stage}/results")
                        .WithTags("Results")
-                       .AddEndpointFilterFactory(EnumValidationFilter.Create)
+                       .AddEndpointFilterFactory(ValidationFilter.Create)
                        .ProducesValidationProblem();
 
         group.MapGet("/",
-                     async Task<Results<Ok<ContestResults>, NotFound>> (string contestName, Models.ContestStage stage, IResultService resultService, CancellationToken cancellationToken) =>
+                     async Task<Results<Ok<ContestResults>, NotFound>> ([AsParameters] GetResultsRequest request, IResultService resultService, CancellationToken cancellationToken) =>
                      {
-                         if (await resultService.GetResultsAsync(contestName, stage.MapContestStage(), cancellationToken) is not { Published: true } contestResults)
+                         if (await resultService.GetResultsAsync(request.ContestName, request.Stage.MapContestStage(), cancellationToken) is not { Published: true } contestResults)
                              return TypedResults.NotFound();
 
                          var results = new ContestResults(contestResults.Problems.Select(problem => problem.MapProblem()),
@@ -39,10 +40,10 @@ public static class ResultEndpoints
              .WithSummary("Get common contest stage results");
 
         group.MapGet("/personal",
-                     async Task<Results<Ok<ParticipantResult>, NotFound>>(string contestName, Models.ContestStage stage, IResultService resultService, CancellationToken cancellationToken, IParticipantServiceClient participantServiceClient, HttpContext context) =>
+                     async Task<Results<Ok<ParticipantResult>, NotFound>>([AsParameters] GetResultsRequest request, IResultService resultService, CancellationToken cancellationToken, IParticipantServiceClient participantServiceClient, HttpContext context) =>
                      {
-                         if (await participantServiceClient.GetParticipantIdAsync(contestName, context.GetUserId()) is not { } participantId
-                          || await resultService.GetResultsAsync(contestName, stage.MapContestStage(), cancellationToken) is not { Published: true } contestResults
+                         if (await participantServiceClient.GetParticipantIdAsync(request.ContestName, context.GetUserId()) is not { } participantId
+                          || await resultService.GetResultsAsync(request.ContestName, request.Stage.MapContestStage(), cancellationToken) is not { Published: true } contestResults
                           || contestResults.ResultGroups
                                            .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
                                            .FirstOrDefault(row => row.Row.Item.Participant.Id == participantId) is not { } resultRow)
