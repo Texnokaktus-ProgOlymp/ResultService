@@ -16,7 +16,7 @@ public class ParticipantServiceClient(ParticipantService.ParticipantServiceClien
         return await client.GetContestParticipantsAsync(request);
     }
 
-    public async Task<int?> GetParticipantIdAsync(string contestName, int userId)
+    public async Task<int?> GetParticipantIdAsync(string contestName, int userId, CancellationToken cancellationToken)
     {
         try
         {
@@ -26,7 +26,7 @@ public class ParticipantServiceClient(ParticipantService.ParticipantServiceClien
                 UserId = userId
             };
 
-            var response = await client.GetParticipantIdAsync(request);
+            var response = await client.GetParticipantIdAsync(request, cancellationToken: cancellationToken);
 
             return response.ParticipantId;
         }

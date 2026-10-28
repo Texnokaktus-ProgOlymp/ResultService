@@ -5,5 +5,5 @@ namespace Texnokaktus.ProgOlymp.ResultService.Infrastructure.Clients.Abstraction
 public interface IParticipantServiceClient
 {
     Task<GetContestParticipantsResponse> GetContestParticipantsAsync(string contestName);
-    Task<int?> GetParticipantIdAsync(string contestName, int userId);
+    Task<int?> GetParticipantIdAsync(string contestName, int userId, CancellationToken cancellationToken);
 }

@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
+using Grpc.Core;
+using NSubstitute;
+using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Participants;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
 using Texnokaktus.ProgOlymp.ResultService.IntegrationTests.Assertions;
 using Texnokaktus.ProgOlymp.ResultService.IntegrationTests.Data;
@@ -9,6 +12,59 @@ namespace Texnokaktus.ProgOlymp.ResultService.IntegrationTests;
 
 public class RestParticipantResultQueryingTests : SetupBase
 {
+    [Test]
+    public async Task CancelledPersonalRequest_CancelsParticipantLookup()
+    {
+        await using var factory = new CustomWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient(42);
+        using var cancellation = new CancellationTokenSource();
+        var lookupStarted = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var lookupCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var lookupResponse = new TaskCompletionSource<GetParticipantIdResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var timeout = TimeSpan.FromSeconds(10);
+        CancellationTokenRegistration registration = default;
+        factory.ParticipantServiceClientMock
+            .GetParticipantIdAsync(Arg.Any<GetParticipantIdRequest>(), cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(info =>
+            {
+                var token = info.Arg<CancellationToken>();
+                registration = token.Register(() =>
+                {
+                    lookupCancelled.TrySetResult();
+                    lookupResponse.TrySetCanceled(token);
+                });
+                lookupStarted.TrySetResult(token);
+                return new AsyncUnaryCall<GetParticipantIdResponse>(lookupResponse.Task,
+                    Task.FromResult(new Metadata()), () => Status.DefaultSuccess, () => new Metadata(), () => { });
+            });
+
+        Task<HttpResponseMessage>? request = null;
+        try
+        {
+            request = client.GetAsync("/api/contests/test/Preliminary/results/personal", cancellation.Token);
+            var token = await lookupStarted.Task.WaitAsync(timeout);
+            Assert.That(token.CanBeCanceled, Is.True, "The participant lookup must receive the request cancellation signal.");
+
+            cancellation.Cancel();
+            await lookupCancelled.Task.WaitAsync(timeout);
+            await Assert.CatchAsync<OperationCanceledException>(async () =>
+            {
+                using var response = await request.WaitAsync(timeout);
+            });
+        }
+        finally
+        {
+            cancellation.Cancel();
+            lookupResponse.TrySetCanceled();
+            registration.Dispose();
+            if (request is not null)
+            {
+                try { using var response = await request.WaitAsync(timeout); }
+                catch (OperationCanceledException) { }
+            }
+        }
+    }
+
     [TestCase("missing")]
     [TestCase("malformed")]
     [TestCase("expired")]

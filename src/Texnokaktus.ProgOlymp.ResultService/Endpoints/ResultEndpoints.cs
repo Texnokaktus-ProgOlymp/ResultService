@@ -42,7 +42,7 @@ public static class ResultEndpoints
         group.MapGet("/personal",
                      async Task<Results<Ok<ParticipantResult>, NotFound>>([AsParameters] GetResultsRequest request, IResultService resultService, CancellationToken cancellationToken, IParticipantServiceClient participantServiceClient, HttpContext context) =>
                      {
-                         if (await participantServiceClient.GetParticipantIdAsync(request.ContestName, context.GetUserId()) is not { } participantId
+                         if (await participantServiceClient.GetParticipantIdAsync(request.ContestName, context.GetUserId(), cancellationToken) is not { } participantId
                           || await resultService.GetResultsAsync(request.ContestName, request.Stage.MapContestStage(), cancellationToken) is not { Published: true } contestResults
                           || contestResults.ResultGroups
                                            .SelectMany(resultGroup => resultGroup.Rows.Select(row => new { Group = resultGroup.Name, Row = row }))
